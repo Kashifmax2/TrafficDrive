@@ -26,7 +26,7 @@ APP_BIN="$REPO_DIR/squashfs-root/TrafficDrive"
 say() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 
 need_pkgs() {
-  for c in Xvfb x11vnc websockify openbox; do
+  for c in Xvfb x11vnc websockify openbox xdotool wmctrl; do
     command -v "$c" >/dev/null 2>&1 || return 0
   done
   return 1
@@ -38,7 +38,7 @@ if need_pkgs; then
   # Ubuntu 24.04+ renamed libasound2 to libasound2t64
   if apt-cache show libasound2t64 >/dev/null 2>&1; then ASOUND=libasound2t64; else ASOUND=libasound2; fi
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    xvfb x11vnc novnc websockify openbox \
+    xvfb x11vnc novnc websockify openbox xdotool wmctrl \
     libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
     libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 \
     libcairo2 "$ASOUND" libgtk-3-0 libnotify4 libxtst6 libxss1
@@ -47,8 +47,8 @@ fi
 export DISPLAY="$DISPLAY_NUM"
 
 if ! pgrep -f "Xvfb ${DISPLAY_NUM}" >/dev/null 2>&1; then
-  say "Starting virtual display ${DISPLAY_NUM} (1600x900)"
-  Xvfb "$DISPLAY_NUM" -screen 0 1600x900x24 >/tmp/xvfb.log 2>&1 &
+  say "Starting virtual display ${DISPLAY_NUM} (1920x1080)"
+  Xvfb "$DISPLAY_NUM" -screen 0 1920x1080x24 >/tmp/xvfb.log 2>&1 &
   sleep 1
 fi
 
@@ -97,5 +97,21 @@ cat <<EOF
   Press Ctrl+C to stop the app (the desktop and viewer keep running).
 
 EOF
+
+# The Electron window can start larger than the virtual screen or partly
+# off-screen, where the mouse cannot reach it. Openbox gives it a titlebar
+# (drag / Alt+drag / double-click to maximize) and this helper centres it.
+fit_window() {
+  for _ in $(seq 1 40); do
+    wid=$(xdotool search --name 'TrafficDrive' 2>/dev/null | head -1 || true)
+    if [ -n "${wid:-}" ]; then
+      xdotool windowsize "$wid" 1500 840 2>/dev/null || true
+      xdotool windowmove "$wid" 30 30 2>/dev/null || true
+      return 0
+    fi
+    sleep 1
+  done
+}
+fit_window &
 
 exec "$APP_BIN" --no-sandbox
