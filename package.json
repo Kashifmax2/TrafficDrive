@@ -13,6 +13,8 @@
     "smoke": "node scripts/smoke-test.js",
     "build:win": "npm run chromium:prepare && electron-builder --win nsis portable",
     "build:linux": "npm run chromium:prepare && electron-builder --linux AppImage deb",
+    "build:linux:dir": "npm run chromium:prepare && electron-builder --linux dir --x64",
+    "pack:linux:tar": "node scripts/pack-linux-tar.js",
     "build:dir": "npm run chromium:prepare && electron-builder --dir"
   },
   "dependencies": {
@@ -22,7 +24,6 @@
   },
   "devDependencies": {
     "electron": "45.2.3",
-    "electron-builder": "26.18.0",
-    "tar": "^7.5.2"
+    "electron-builder": "26.18.0"
   }
 }

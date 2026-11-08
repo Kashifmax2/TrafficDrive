@@ -59,6 +59,18 @@ trafficdrive
 Or install from your file manager. All Chromium/Playwright libraries are
 declared as dependencies.
 
+### Linux portable archive (fallback)
+
+If AppImage/deb cannot be used, extract the portable archive and run it:
+
+```bash
+tar -xzf TrafficDrive-5.9.0-linux-x64-portable.tar.gz
+./TrafficDrive-5.9.0-linux-x64/TrafficDrive
+```
+
+It contains the same app and bundled Chromium; only the installer integration
+(menu entry, auto-update paths) is missing.
+
 ## Install from GitHub Actions (no local toolchain)
 
 Every push to `main`, every tag `v*`, or a manual run builds both platforms:
@@ -122,8 +134,19 @@ npm run build:win
 ### Cross-building Linux from Windows
 
 `AppImage` needs symlink privileges and a Linux `mksquashfs`, so build Linux
-artifacts on Linux or through GitHub Actions. A Windows `tar.gz` cross-build
-loses Unix executable bits and is not a supported release artifact.
+installers on Linux or through GitHub Actions. If you only need a portable
+archive from a Windows machine:
+
+```bash
+# build the unpacked Linux app (requires vendor/chromium with chrome-linux64)
+npx electron-builder --linux dir --x64
+npm run pack:linux:tar
+```
+
+`pack-linux-tar.js` writes a proper ustar archive and restores the Unix
+executable bits that Windows loses, so `TrafficDrive` and the bundled Chromium
+stay runnable after extraction. This archive is not a substitute for the
+CI-tested AppImage/deb release.
 
 ## Local data (not in git)
 
