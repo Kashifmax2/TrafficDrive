@@ -3,18 +3,26 @@
   "version": "5.9.0",
   "description": "TrafficDrive - Desktop Traffic Automation Application",
   "main": "main.js",
+  "desktopName": "trafficdrive.desktop",
   "author": "TrafficDrive",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "server": "node -e \"require('./server.js').startServer()\""
+    "server": "node -e \"require('./server.js').startServer()\"",
+    "chromium:prepare": "node scripts/prepare-chromium.js",
+    "smoke": "node scripts/smoke-test.js",
+    "build:win": "npm run chromium:prepare && electron-builder --win nsis portable",
+    "build:linux": "npm run chromium:prepare && electron-builder --linux AppImage deb",
+    "build:dir": "npm run chromium:prepare && electron-builder --dir"
   },
   "dependencies": {
-    "playwright": "^1.63.0",
-    "socks": "^2.8.10",
-    "extract-zip": "^2.0.1"
+    "extract-zip": "2.0.1",
+    "playwright": "1.63.0",
+    "socks": "2.8.10"
   },
   "devDependencies": {
-    "electron": "latest"
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0",
+    "tar": "^7.5.2"
   }
 }

@@ -4,6 +4,16 @@ const path = require('path');
 // Keep a global reference of the window object so it isn't garbage collected.
 let mainWindow;
 
+// Linux: several distributions (Ubuntu 24.04+) restrict unprivileged user
+// namespaces, which makes Electron's Chromium sandbox abort at startup. The
+// renderer already runs with sandbox:false and Playwright is launched with
+// --no-sandbox, so disabling the outer sandbox keeps Linux working exactly
+// like the Windows build. Windows/macOS are untouched.
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('no-sandbox');
+  app.commandLine.appendSwitch('disable-gpu-sandbox');
+}
+
 // --- Backend server --------------------------------------------------------
 // The dashboard (index.html) talks to a REST API on localhost:3000 to start
 // / stop / pause traffic campaigns. We start that server inside the Electron

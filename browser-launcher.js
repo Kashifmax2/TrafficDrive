@@ -13,9 +13,7 @@
 // resort so the app works even with zero Playwright browsers downloaded.
 
 const { chromium } = require('playwright');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+const platform = require('./platform.js');
 
 // Cache the resolved fallback path so we only scan the filesystem once.
 let _cachedFallbackPath = null;
@@ -23,85 +21,31 @@ let _cachedFallbackPath = null;
 /**
  * When running inside a packaged Electron app (built with electron-builder),
  * the bundled Chromium browser is shipped under `process.resourcesPath/chromium`.
- * This avoids requiring the user to download Playwright browsers separately.
- * Returns the path to the bundled chrome.exe, or null when not packaged / missing.
+ * On Windows that is chrome-win64/chrome.exe, on Linux chrome-linux/chrome and
+ * on macOS Chromium.app/Contents/MacOS/Chromium. This avoids requiring the user
+ * to download Playwright browsers separately.
+ * Returns the path to the bundled browser, or null when not packaged / missing.
  */
 function findBundledBrowser() {
-  try {
-    const candidates = [];
-    // Packaged Electron app: electron-builder copies extraResources to
-    // process.resourcesPath.
-    if (process && process.resourcesPath) {
-      for (const sub of ['chrome-win64', 'chrome-win']) {
-        candidates.push(path.join(process.resourcesPath, 'chromium', sub, 'chrome.exe'));
-      }
-    }
-    // Dev mode: check the local bundled-chromium folder.
-    for (const sub of ['chrome-win64', 'chrome-win']) {
-      candidates.push(path.join(__dirname, 'bundled-chromium', sub, 'chrome.exe'));
-    }
-    for (const exe of candidates) {
-      const dll = path.join(path.dirname(exe), 'chrome.dll');
-      if (fs.existsSync(exe) && fs.existsSync(dll)) return exe;
-    }
-  } catch (_) {}
-  return null;
+  return platform.findBundledBrowser() || null;
 }
 
 /**
- * Scan the ms-playwright cache for any complete chromium-* build and return
- * the path to its chrome.exe. Returns null if none found.
+ * Scan the platform's ms-playwright cache for any complete chromium-* build
+ * and return the path to its executable. Returns null if none found.
  */
 function findCachedChromium() {
   if (_cachedFallbackPath !== null) return _cachedFallbackPath;
-  const cacheDir = path.join(os.homedir(), 'AppData', 'Local', 'ms-playwright');
-  let found = null;
-  try {
-    if (!fs.existsSync(cacheDir)) return null;
-    const dirs = fs.readdirSync(cacheDir)
-      .filter(d => /^chromium-\d+$/.test(d))
-      .sort((a, b) => {
-        // Prefer the highest revision number (most recent).
-        const na = parseInt(a.replace('chromium-', ''), 10);
-        const nb = parseInt(b.replace('chromium-', ''), 10);
-        return nb - na;
-      });
-    for (const d of dirs) {
-      // Check both chrome-win64 (newer) and chrome-win (older) layouts.
-      for (const sub of ['chrome-win64', 'chrome-win']) {
-        const exe = path.join(cacheDir, d, sub, 'chrome.exe');
-        if (fs.existsSync(exe)) {
-          // Sanity-check: the chrome.dll (the real browser code) must also
-          // be present, otherwise this is just a launcher stub.
-          const dll = path.join(cacheDir, d, sub, 'chrome.dll');
-          if (fs.existsSync(dll)) {
-            found = exe;
-            break;
-          }
-        }
-      }
-      if (found) break;
-    }
-  } catch (_) {}
-  _cachedFallbackPath = found;
-  return found;
+  _cachedFallbackPath = platform.findCachedBrowser() || null;
+  return _cachedFallbackPath;
 }
 
 /**
- * Look for a system-installed Chrome or Edge binary as a last resort.
+ * Look for a system-installed Chrome / Chromium / Edge / Brave binary as a
+ * last resort.
  */
 function findSystemBrowser() {
-  const candidates = [
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-    path.join(os.homedir(), 'AppData', 'Local', 'Google', 'Chrome', 'Application', 'chrome.exe'),
-    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-  ];
-  for (const c of candidates) {
-    try { if (fs.existsSync(c)) return c; } catch (_) {}
-  }
-  return null;
+  return platform.systemBrowserPaths()[0] || null;
 }
 
 /**

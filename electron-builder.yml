@@ -1,0 +1,86 @@
+appId: com.trafficdrive.desktop
+productName: TrafficDrive
+executableName: TrafficDrive
+copyright: Copyright © 2026 TrafficDrive
+
+directories:
+  output: dist
+  buildResources: build-res
+
+# Source files that go inside app.asar. The bundled browser is shipped as an
+# extra resource so Playwright can execute it outside the archive.
+files:
+  - "**/*"
+  - "!vendor{,/**/*}"
+  - "!dist{,/**/*}"
+  - "!scripts{,/**/*}"
+  - "!.github{,/**/*}"
+  - "!README.md"
+  - "!electron-builder.yml"
+  - "!*.zip"
+  - "!*.log"
+
+extraResources:
+  - from: vendor/chromium
+    to: chromium
+    filter:
+      - "**/*"
+
+asar: true
+compression: normal
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  icon: build-res/icon.ico
+  artifactName: TrafficDrive-${version}-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: TrafficDrive
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+  artifactName: TrafficDrive-Setup-${version}.${ext}
+
+portable:
+  artifactName: TrafficDrive-Portable-${version}.${ext}
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  icon: build-res/icons
+  category: Network
+  synopsis: Desktop traffic automation
+  description: TrafficDrive desktop traffic automation (Electron + Playwright).
+  syncDesktopName: true
+  artifactName: TrafficDrive-${version}-${arch}.${ext}
+
+appImage:
+  artifactName: TrafficDrive-${version}-${arch}.${ext}
+
+deb:
+  artifactName: TrafficDrive-${version}-${arch}.${ext}
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libgbm1
+    - libasound2

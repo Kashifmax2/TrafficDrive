@@ -4,6 +4,9 @@ dist/
 build/
 out/
 
+# Bundled browser is downloaded per OS at build time (see scripts/prepare-chromium.js)
+vendor/
+
 # Packaged Electron data (never commit)
 resources/
 *.asar

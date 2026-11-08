@@ -29,6 +29,7 @@ const os = require('os');
 const net = require('net');
 const socks = require('socks'); // SOCKS4/5 proxy support
 const extractZip = require('extract-zip'); // Browser zip extraction
+const platform = require('./platform.js'); // Cross-platform paths / browsers
 
 // --- Traffic modules -------------------------------------------------------
 // Lazy-loaded to avoid blocking startup
@@ -63,7 +64,7 @@ const processes = new Map();
 let nextProcessId = 1;
 
 // Proxy store. Loaded from disk on boot so the list survives app restarts.
-const PROXY_STORE_FILE = path.join(os.homedir(), 'AppData', 'Local', 'NGF NOMI TOOLS', 'proxies.json');
+const PROXY_STORE_FILE = path.join(platform.appDataDir(), 'proxies.json');
 let loadedProxies = [];
 
 // Background validation jobs (jobId -> { total, queue, done }) so the UI can
@@ -996,7 +997,7 @@ async function rpaPlayLoop(actions, opts) {
 }
 
 // Schedule state - persisted to disk
-const SCHEDULE_FILE = path.join(os.homedir(), 'AppData', 'Local', 'NGF NOMI TOOLS', 'schedule.json');
+const SCHEDULE_FILE = path.join(platform.appDataDir(), 'schedule.json');
 let scheduleState = {};
 let savedSchedules = [];
 let scheduleLoaded = false;
@@ -1279,7 +1280,7 @@ async function runBrowserValidation(list, targetUrl, onResult, opts = {}) {
 // progress via SSE. Installed browsers are stored in a known directory and
 // detected by /api/browsers/detect.
 
-const BROWSER_INSTALL_DIR = path.join(os.homedir(), 'AppData', 'Local', 'NGF NOMI TOOLS', 'browsers');
+const BROWSER_INSTALL_DIR = path.join(platform.appDataDir(), 'browsers');
 const BROWSER_REGISTRY_FILE = path.join(BROWSER_INSTALL_DIR, 'registry.json');
 
 // In-memory progress state for active downloads, keyed by browser id.
@@ -1392,39 +1393,65 @@ async function extractZipArchive(zipPath, targetDir) {
     await extractZip(zipPath, { dir: targetDir });
     return true;
   } catch (e) {
-    // Fallback: try using PowerShell's Expand-Archive
-    try {
-      const { execFileSync } = require('child_process');
-      execFileSync('powershell', ['-Command', 'Expand-Archive -Path "' + zipPath + '" -DestinationPath "' + targetDir + '" -Force'], { timeout: 120000 });
-      return true;
-    } catch (_) {
-      throw e;
+    // Fallback 1: PowerShell's Expand-Archive (Windows only).
+    if (platform.IS_WIN) {
+      try {
+        const { execFileSync } = require('child_process');
+        execFileSync('powershell', ['-Command', 'Expand-Archive -Path "' + zipPath + '" -DestinationPath "' + targetDir + '" -Force'], { timeout: 120000 });
+        return true;
+      } catch (_) {}
     }
+    // Fallback 2: the `unzip` CLI when it is installed (Linux / macOS).
+    if (!platform.IS_WIN) {
+      try {
+        const { execFileSync } = require('child_process');
+        execFileSync('unzip', ['-o', '-q', zipPath, '-d', targetDir], { timeout: 120000 });
+        return true;
+      } catch (_) {}
+    }
+    throw e;
   }
 }
 
 // Find the browser executable inside an extracted directory.
 function findBrowserExe(dir, browserId) {
   try {
-    // Common executable names by browser type
-    const exeNames = {
-      'chrome': ['chrome.exe', 'chrome-win64\\chrome.exe', 'chrome-win\\chrome.exe'],
-      'chromium': ['chrome.exe', 'chrome-win64\\chrome.exe', 'chrome-win\\chrome.exe'],
-      'edge': ['msedge.exe'],
-      'brave': ['brave.exe'],
-      'vivaldi': ['vivaldi.exe'],
-      'opera': ['opera.exe'],
-      'opera-gx': ['opera.exe'],
-      'firefox': ['firefox.exe'],
-      'waterfox': ['waterfox.exe'],
-      'librewolf': ['librewolf.exe'],
-      'thorium': ['thorium.exe', 'chrome.exe'],
-      'ungoogled': ['chrome.exe', 'chrome-win64\\chrome.exe'],
-    };
-    const names = exeNames[browserId] || ['chrome.exe', 'firefox.exe', 'msedge.exe'];
-    // First, try direct paths
+    // Common executable names by browser type.
+    const exeNames = platform.IS_WIN
+      ? {
+        'chrome': ['chrome.exe', 'chrome-win64\\chrome.exe', 'chrome-win\\chrome.exe'],
+        'chromium': ['chrome.exe', 'chrome-win64\\chrome.exe', 'chrome-win\\chrome.exe'],
+        'edge': ['msedge.exe'],
+        'brave': ['brave.exe'],
+        'vivaldi': ['vivaldi.exe'],
+        'opera': ['opera.exe'],
+        'opera-gx': ['opera.exe'],
+        'firefox': ['firefox.exe'],
+        'waterfox': ['waterfox.exe'],
+        'librewolf': ['librewolf.exe'],
+        'thorium': ['thorium.exe', 'chrome.exe'],
+        'ungoogled': ['chrome.exe', 'chrome-win64\\chrome.exe'],
+      }
+      : {
+        'chrome': ['chrome', 'chrome-linux/chrome', 'google-chrome', 'google-chrome-stable'],
+        'chromium': ['chrome', 'chrome-linux/chrome', 'chromium', 'chromium-browser'],
+        'edge': ['msedge', 'microsoft-edge', 'microsoft-edge-stable', 'msedge-linux64/msedge'],
+        'brave': ['brave', 'brave-browser'],
+        'vivaldi': ['vivaldi', 'vivaldi-stable'],
+        'opera': ['opera'],
+        'opera-gx': ['opera'],
+        'firefox': ['firefox'],
+        'waterfox': ['waterfox'],
+        'librewolf': ['librewolf'],
+        'thorium': ['thorium', 'chrome'],
+        'ungoogled': ['chrome', 'chrome-linux/chrome'],
+      };
+    const names = exeNames[browserId] || (platform.IS_WIN
+      ? ['chrome.exe', 'firefox.exe', 'msedge.exe']
+      : ['chrome', 'chromium', 'firefox', 'msedge']);
+    // First, try direct paths (normalize separators for the current OS).
     for (const n of names) {
-      const p = path.join(dir, n);
+      const p = path.join(dir, ...n.split(/[\\/]+/));
       if (fs.existsSync(p)) return p;
     }
     // Then, search recursively (limited depth)
@@ -1533,6 +1560,9 @@ function saveInstalledBrowsers(list) {
 // System-installed browser detection — scans common paths for all
 // browsers in the BROWSERS list.
 function detectSystemBrowsers() {
+  // Linux / macOS: scan native package locations and PATH.
+  if (!platform.IS_WIN) return platform.detectPosixBrowsers();
+
   const programFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
   const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
   const localAppData = process.env['LOCALAPPDATA'] || path.join(os.homedir(), 'AppData', 'Local');
@@ -2970,49 +3000,21 @@ function safeExists(p) {
 function findBundledChromium() {
   // In a packaged Electron app electron-builder copies extraResources to
   // process.resourcesPath. We ship Chromium there so users do not need to
-  // download anything extra.
-  try {
-    const candidates = [];
-    if (process.resourcesPath) {
-      candidates.push(path.join(process.resourcesPath, 'chromium', 'chrome-win64', 'chrome.exe'));
-      candidates.push(path.join(process.resourcesPath, 'chromium', 'chrome-win', 'chrome.exe'));
-    }
-    // Also support running the server directly from the source tree (dev mode).
-    candidates.push(path.join(__dirname, 'bundled-chromium', 'chrome-win64', 'chrome.exe'));
-    candidates.push(path.join(__dirname, 'bundled-chromium', 'chrome-win', 'chrome.exe'));
-    for (const exe of candidates) {
-      const dir = path.dirname(exe);
-      const dll = path.join(dir, 'chrome.dll');
-      if (fs.existsSync(exe) && fs.existsSync(dll)) return exe;
-    }
-  } catch (_) {}
-  return '';
+  // download anything extra. Windows -> chrome-win64\chrome.exe,
+  // Linux -> chrome-linux/chrome, macOS -> Chromium.app/Contents/MacOS/Chromium.
+  return platform.findBundledBrowser() || '';
 }
 
 function findCachedChromiumSafe() {
   // Prefer the Chromium we ship with the app over a system ms-playwright cache.
   const bundled = findBundledChromium();
   if (bundled) return bundled;
-  try {
-    const cacheDir = path.join(os.homedir(), 'AppData', 'Local', 'ms-playwright');
-    if (!fs.existsSync(cacheDir)) return '';
-    const dirs = fs.readdirSync(cacheDir)
-      .filter(d => /^chromium-\d+$/.test(d))
-      .sort((a, b) => parseInt(b.replace('chromium-', '')) - parseInt(a.replace('chromium-', '')));
-    for (const d of dirs) {
-      for (const sub of ['chrome-win64', 'chrome-win']) {
-        const exe = path.join(cacheDir, d, sub, 'chrome.exe');
-        const dll = path.join(cacheDir, d, sub, 'chrome.dll');
-        if (fs.existsSync(exe) && fs.existsSync(dll)) return exe;
-      }
-    }
-  } catch (_) {}
-  return '';
+  return platform.findCachedBrowser() || '';
 }
 
 // --- Server startup --------------------------------------------------------
 
-const PORT = 3000;
+const PORT = parseInt(process.env.TRAFFICDRIVE_PORT || process.env.PORT || '3000', 10);
 
 let serverInstance = null;
 
