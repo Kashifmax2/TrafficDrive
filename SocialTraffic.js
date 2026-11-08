@@ -3,7 +3,7 @@ const PopupHandler = require('./PopupHandler.js');
 const EventEmitter = require('events');
 const stopManager = require('./StopManager.js');
 const { installCaptchaGuard } = require('./CaptchaGuard.js');
-const { installPrivacyGuard } = require('./PrivacyGuard.js');
+const { installPrivacyGuard, privacyContextOptions } = require('./PrivacyGuard.js');
 const {
   installProxyErrorWatcher,
   installPopupGuard,
@@ -17,7 +17,7 @@ const {
   verifyEgress,
 } = require('./EgressGuard.js');
 const { runWithProxyRetry } = require('./ProxyRotation.js');
-const { chooseViewport, describeProfile } = require('./SessionProfile.js');
+const { chooseViewport, describeProfile, resolveSessionDevice, uaPlatform, uaBrands, uaChPlatform, physicalScreen } = require('./SessionProfile.js');
 const { visitInternalLinks: visitLinks } = require('./LinkClicker.js');
 const { startRandomClicker } = require('./RandomClicker.js');
 
@@ -343,9 +343,18 @@ async function runSocialSession(config, emitter, sessionNum, browserTracker, isS
     `--window-size=${viewportWidth},${viewportHeight}`,
   ];
 
-  const vp = getViewport(device, autoRotateResolutions, viewportWidth, viewportHeight, sessionNum);
   const ua = getUserAgent(userAgents, uaAutoRotate, device);
-  emitter.emit('log', `[Session ${sessionNum}] ${describeProfile(ua, vp, device)}`);
+  const effectiveDevice = resolveSessionDevice(device, ua);
+  const deviceChanged = effectiveDevice !== device;
+  const vp = getViewport(effectiveDevice, deviceChanged ? true : autoRotateResolutions, viewportWidth, viewportHeight, sessionNum);
+  emitter.emit('log', `[Session ${sessionNum}] ${describeProfile(ua, vp, effectiveDevice)}`);
+  if (deviceChanged) {
+    emitter.emit(
+      'log',
+      `[Session ${sessionNum}] Device Setting was "${device}" but the user agent is ${effectiveDevice} - ${effectiveDevice} emulation (Sec-CH-UA-Mobile) applied so trackers see the correct device. Select Mobile + mobile user agents for phone traffic.`,
+      'WARN'
+    );
+  }
   const platform = pickRandom(socialPlatforms);
   const launchBehavior = socialLaunchBehavior || 'platform_then_target';
 
@@ -489,6 +498,7 @@ async function runSocialSession(config, emitter, sessionNum, browserTracker, isS
     // Build newContext options — proxy is attached here (NOT at launch level).
     // This avoids the "browser blinks and closes" issue caused by Playwright's
     // proxy-auth dialog appearing before any page loads.
+    const privacyOptions = privacyContextOptions(config.privacyFeatures || []);
     const contextOptions = {
       viewport: { width: vp.width, height: vp.height },
       userAgent: ua,
@@ -496,10 +506,18 @@ async function runSocialSession(config, emitter, sessionNum, browserTracker, isS
       hasTouch: !!vp.hasTouch,
       deviceScaleFactor: vp.deviceScaleFactor || 1,
       // Ensure the browser sends Referer headers on cross-origin navigations.
-      extraHTTPHeaders: {
-        'Referrer-Policy': 'unsafe-url',
-      }
+      // Referer Control (privacy) overrides this when it is enabled.
+      extraHTTPHeaders: Object.assign(
+        { 'Referrer-Policy': 'unsafe-url' },
+        privacyOptions.extraHTTPHeaders || {}
+      ),
     };
+    delete privacyOptions.extraHTTPHeaders;
+    Object.assign(contextOptions, privacyOptions);
+    if (vp.hasTouch) {
+      const screenSize = physicalScreen(vp);
+      if (screenSize) contextOptions.screen = screenSize;
+    }
     if (contextProxyOpts) {
       contextOptions.proxy = contextProxyOpts;
     }
@@ -523,7 +541,7 @@ async function runSocialSession(config, emitter, sessionNum, browserTracker, isS
     const context = await browser.newContext(contextOptions);
 
     // Spoof the traffic source (referrer) if the global option is enabled.
-    await require('./TrafficSource.js').installTrafficSource(context, config.trafficSource, {
+    const trafficSourceResult = await require('./TrafficSource.js').installTrafficSource(context, config.trafficSource, {
       targetUrl: config.targetUrl,
       log: (msg, type) => emitter.emit('log', `[Session ${sessionNum}] ${msg}`, type),
     }).catch(() => ({ applied: false }));
@@ -569,16 +587,25 @@ async function runSocialSession(config, emitter, sessionNum, browserTracker, isS
 
     // Workaround for Playwright Chromium proxy-auth redirect hang.
     if (contextProxyOpts && contextProxyOpts.server) {
-      try { await page.route('**/*', route => route.continue()); } catch (_) {}
+      try { await page.route('**/*', route => route.fallback()); } catch (_) {}
     }
     
-    // Apply privacy/anti-detection features (from the Privacy page toggles).
+    // Apply privacy/anti-detection features (from the Privacy page toggles)
+    // to the whole context, so ad popups / background tabs are covered too.
     const privacyFeatures = config.privacyFeatures || [];
     const privacyLevel = config.privacyLevel || 'standard';
-    await installPrivacyGuard(page, {
+    await installPrivacyGuard(context, {
       privacyFeatures,
       privacyLevel,
       timezone: proxyGeo && proxyGeo.timezone,
+      ua,
+      platform: uaPlatform(ua),
+      chPlatform: uaChPlatform(ua),
+      brands: uaBrands(ua),
+      device: effectiveDevice,
+      viewport: vp,
+      hasTouch: !!vp.hasTouch,
+      trafficReferrer: trafficSourceResult && trafficSourceResult.applied ? trafficSourceResult.referrer : '',
       onLog: (msg) => emitter.emit('log', msg),
     });
 

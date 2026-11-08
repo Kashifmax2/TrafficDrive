@@ -1,6 +1,6 @@
 {
   "name": "trafficdrive",
-  "version": "5.9.0",
+  "version": "5.9.1",
   "description": "TrafficDrive - Desktop Traffic Automation Application",
   "main": "main.js",
   "desktopName": "trafficdrive.desktop",
@@ -11,6 +11,7 @@
     "server": "node -e \"require('./server.js').startServer()\"",
     "chromium:prepare": "node scripts/prepare-chromium.js",
     "smoke": "node scripts/smoke-test.js",
+    "test:privacy": "node scripts/privacy-test.js",
     "build:win": "npm run chromium:prepare && electron-builder --win nsis portable",
     "build:linux": "npm run chromium:prepare && electron-builder --linux AppImage deb",
     "build:linux:dir": "npm run chromium:prepare && electron-builder --linux dir --x64",

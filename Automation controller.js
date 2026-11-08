@@ -671,8 +671,10 @@
     // RPA replay uses the same UA / resolution settings as campaigns.
     let uaData = {};
     let resData = {};
+    let privacyData = {};
     try { if (typeof getUaCampaignData === 'function') uaData = getUaCampaignData() || {}; } catch (_) {}
     try { if (typeof getResolutionData === 'function') resData = getResolutionData() || {}; } catch (_) {}
+    try { if (typeof getPrivacyData === 'function') privacyData = getPrivacyData() || {}; } catch (_) {}
 
     rpaReplayActive = true;
     rpaUpdateStatus('replaying');
@@ -704,6 +706,7 @@
         trafficSource,
         ...uaData,
         ...resData,
+        ...privacyData,
       }),
     }).then(r => r.json()).then(data => {
       if (!data || !data.success) {

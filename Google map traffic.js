@@ -3,7 +3,7 @@ const { runInternalLinkNavigation, readArticlesOnPage, waitForFullPageLoad, dism
 const PopupHandler = require('./PopupHandler.js');
 const EventEmitter = require('events');
 const { installCaptchaGuard } = require('./CaptchaGuard.js');
-const { installPrivacyGuard } = require('./PrivacyGuard.js');
+const { installPrivacyGuard, privacyContextOptions } = require('./PrivacyGuard.js');
 const {
   installProxyErrorWatcher,
   installPopupGuard,
@@ -17,7 +17,7 @@ const {
   verifyEgress,
 } = require('./EgressGuard.js');
 const { runWithProxyRetry } = require('./ProxyRotation.js');
-const { chooseViewport, chooseUserAgent, describeProfile } = require('./SessionProfile.js');
+const { chooseViewport, chooseUserAgent, describeProfile, resolveSessionDevice, uaPlatform, uaBrands, uaChPlatform, physicalScreen } = require('./SessionProfile.js');
 const { visitInternalLinks: visitLinks } = require('./LinkClicker.js');
 const { startRandomClicker } = require('./RandomClicker.js');
 
@@ -683,14 +683,24 @@ async function runMapsSession(config, emitter, sessionNum, browserTracker, isSto
     // Use the same UA + resolution rules as Direct/Organic/Social. Previously
     // Gmaps always picked a random device UA and ignored the selected UA list
     // and auto-rotate resolutions.
-    const viewport = chooseViewport(device, autoRotateResolutions, viewportWidth, viewportHeight, sessionNum);
     const ua = chooseUserAgent(userAgents, !!uaAutoRotate, device, {
       desktop: DESKTOP_USER_AGENTS,
       mobile: MOBILE_USER_AGENTS,
       tablet: TABLET_USER_AGENTS,
     });
-    emitter.emit('log', `[Session ${sessionNum}] ${describeProfile(ua, viewport, device)}`);
+    const effectiveDevice = resolveSessionDevice(device, ua);
+    const deviceChanged = effectiveDevice !== device;
+    const viewport = chooseViewport(effectiveDevice, deviceChanged ? true : autoRotateResolutions, viewportWidth, viewportHeight, sessionNum);
+    emitter.emit('log', `[Session ${sessionNum}] ${describeProfile(ua, viewport, effectiveDevice)}`);
+    if (deviceChanged) {
+      emitter.emit(
+        'log',
+        `[Session ${sessionNum}] Device Setting was "${device}" but the user agent is ${effectiveDevice} - ${effectiveDevice} emulation (Sec-CH-UA-Mobile) applied so trackers see the correct device. Select Mobile + mobile user agents for phone traffic.`,
+        'WARN'
+      );
+    }
 
+    const privacyOptions = privacyContextOptions(config.privacyFeatures || []);
     const contextOptions = {
       viewport: { width: viewport.width, height: viewport.height },
       userAgent: ua,
@@ -698,6 +708,12 @@ async function runMapsSession(config, emitter, sessionNum, browserTracker, isSto
       hasTouch: !!viewport.hasTouch,
       deviceScaleFactor: viewport.deviceScaleFactor || 1,
     };
+    if (privacyOptions.extraHTTPHeaders) contextOptions.extraHTTPHeaders = privacyOptions.extraHTTPHeaders;
+    if (privacyOptions.locale) contextOptions.locale = privacyOptions.locale;
+    if (viewport.hasTouch) {
+      const screenSize = physicalScreen(viewport);
+      if (screenSize) contextOptions.screen = screenSize;
+    }
     if (proxyOptions && proxyOptions.proxy) {
       contextOptions.proxy = proxyOptions.proxy;
     }
@@ -720,7 +736,7 @@ async function runMapsSession(config, emitter, sessionNum, browserTracker, isSto
     const context = await browser.newContext(contextOptions);
 
     // Spoof the traffic source (referrer) if the global option is enabled.
-    await require('./TrafficSource.js').installTrafficSource(context, config.trafficSource, {
+    const trafficSourceResult = await require('./TrafficSource.js').installTrafficSource(context, config.trafficSource, {
       targetUrl: config.targetUrl,
       log: (msg, type) => emitter.emit('log', `[Session ${sessionNum}] ${msg}`, type),
     }).catch(() => ({ applied: false }));
@@ -766,16 +782,25 @@ async function runMapsSession(config, emitter, sessionNum, browserTracker, isSto
 
     // Workaround for Playwright Chromium proxy-auth redirect hang.
     if (proxyOptions && proxyOptions.proxy && proxyOptions.proxy.server) {
-      try { await page.route('**/*', route => route.continue()); } catch (_) {}
+      try { await page.route('**/*', route => route.fallback()); } catch (_) {}
     }
     
-    // Apply privacy/anti-detection features (from the Privacy page toggles).
+    // Apply privacy/anti-detection features (from the Privacy page toggles)
+    // to the whole context, so ad popups / background tabs are covered too.
     const privacyFeatures = config.privacyFeatures || [];
     const privacyLevel = config.privacyLevel || 'standard';
-    await installPrivacyGuard(page, {
+    await installPrivacyGuard(context, {
       privacyFeatures,
       privacyLevel,
       timezone: proxyGeo && proxyGeo.timezone,
+      ua,
+      platform: uaPlatform(ua),
+      chPlatform: uaChPlatform(ua),
+      brands: uaBrands(ua),
+      device: effectiveDevice,
+      viewport,
+      hasTouch: !!viewport.hasTouch,
+      trafficReferrer: trafficSourceResult && trafficSourceResult.applied ? trafficSourceResult.referrer : '',
       onLog: (msg) => emitter.emit('log', msg),
     });
 

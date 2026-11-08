@@ -47,7 +47,87 @@ function physicalToViewport(width, height, device) {
     w = cssW;
     h = Math.round(h / scale);
   }
-  return { width: w, height: h, isMobile: true, hasTouch: true, deviceScaleFactor: scale };
+  // Client Hints must say "mobile" for phones only. A tablet is a touch
+  // device with `sec-ch-ua-mobile: ?0`; reporting ?1 makes ad networks and
+  // analytics classify iPads/Android tablets as phones.
+  // A CSS-size pool entry (e.g. 390x844) still needs a real phone/tablet DPR,
+  // otherwise window.screen and devicePixelRatio look like a desktop monitor.
+  if (scale === 1) scale = isTablet ? 2 : 3;
+  return { width: w, height: h, isMobile: device === 'mobile', hasTouch: true, deviceScaleFactor: scale };
+}
+
+// --- User-Agent → device / platform ---------------------------------------
+// Ad networks (ExoClick, PopAds, …) classify a hit from the UA *and* the
+// Sec-CH-UA client hints. Playwright derives those hints from `isMobile`, so a
+// mobile UA opened in desktop mode is reported as an Android tablet
+// (mobile=?0) or even as desktop for iOS. The UA is the primary signal, so the
+// emulation always follows it.
+
+function detectUaDevice(ua) {
+  if (!ua || typeof ua !== 'string') return '';
+  if (/iPad|Tablet|PlayBook|Kindle|Silk\//i.test(ua)) return 'tablet';
+  if (/Android/i.test(ua)) return /Mobile/i.test(ua) ? 'mobile' : 'tablet';
+  if (/iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(ua)) return 'mobile';
+  if (/Mobile Safari/i.test(ua)) return 'mobile';
+  return 'desktop';
+}
+
+// navigator.platform value that matches the selected UA. Kept in sync by the
+// privacy "Platform Spoofing" feature so JS fingerprinting and the UA agree.
+function uaPlatform(ua) {
+  if (!ua) return '';
+  if (/iPad|iPhone|iPod/i.test(ua)) return 'iPhone';
+  if (/Android/i.test(ua)) return 'Linux armv81';
+  if (/Windows/i.test(ua)) return 'Win32';
+  if (/Macintosh|Mac OS X/i.test(ua)) return 'MacIntel';
+  if (/Linux/i.test(ua)) return 'Linux x86_64';
+  return '';
+}
+
+// Sec-CH-UA platform name for navigator.userAgentData.
+function uaChPlatform(ua) {
+  if (!ua) return '';
+  if (/iPad|iPhone|iPod/i.test(ua)) return 'iOS';
+  if (/Android/i.test(ua)) return 'Android';
+  if (/Windows/i.test(ua)) return 'Windows';
+  if (/Macintosh|Mac OS X/i.test(ua)) return 'macOS';
+  if (/Linux/i.test(ua)) return 'Linux';
+  return '';
+}
+
+function uaBrowserMajor(ua) {
+  const m = String(ua || '').match(/(?:Chrome|Chromium|Edg|OPR|Firefox)\/(\d+)/);
+  return m ? m[1] : '';
+}
+
+function uaBrands(ua) {
+  const major = uaBrowserMajor(ua);
+  if (!major || !/Chrome|Chromium|Edg|OPR/i.test(ua)) return [];
+  const brands = [{ brand: 'Chromium', version: major }, { brand: 'Not=A?Brand', version: '99' }];
+  if (/Edg\//i.test(ua)) brands.splice(1, 0, { brand: 'Microsoft Edge', version: major });
+  else if (/OPR\//i.test(ua)) brands.splice(1, 0, { brand: 'Opera', version: major });
+  else brands.splice(1, 0, { brand: 'Google Chrome', version: major });
+  return brands;
+}
+
+// Effective device for the session. The selected Device Setting is only a
+// default; the chosen UA is what the visited site (and every tracker) sees, so
+// an Android/iPhone UA always runs with mobile emulation and an iPad/Android
+// tablet UA runs with tablet emulation (touch, but mobile=?0).
+function resolveSessionDevice(selectedDevice, ua) {
+  const fallback = selectedDevice === 'mobile' || selectedDevice === 'tablet' ? selectedDevice : 'desktop';
+  const uaDevice = detectUaDevice(ua);
+  return uaDevice || fallback;
+}
+
+// Screen size in physical pixels for window.screen / Client Hints.
+function physicalScreen(vp) {
+  const scale = (vp && vp.deviceScaleFactor) || 1;
+  if (!vp) return null;
+  return {
+    width: Math.round((vp.width || 0) * scale),
+    height: Math.round((vp.height || 0) * scale),
+  };
 }
 
 /**
@@ -132,4 +212,11 @@ module.exports = {
   physicalToViewport,
   describeProfile,
   pickRandom,
+  detectUaDevice,
+  uaPlatform,
+  uaChPlatform,
+  uaBrands,
+  uaBrowserMajor,
+  resolveSessionDevice,
+  physicalScreen,
 };

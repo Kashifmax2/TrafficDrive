@@ -12,6 +12,55 @@ Desktop traffic-automation app built with **Electron + Node.js + Playwright**.
 > Chromium browser and the packaged `app.asar` are **not** committed. They are
 > installed or downloaded by the build steps below.
 
+## What's new in 5.9.1
+
+**Mobile traffic is now classified as Mobile** (this was the "Mobile 0" bug on
+ad networks).
+
+Playwright derives `Sec-CH-UA-Mobile` from the context's `isMobile` flag, not
+from the User-Agent. The old code always launched phone/tablet sessions with
+`isMobile:false`, so Android phones were reported as **Tablet** and iPhones as
+**Desktop**:
+
+| Hit | Old report | 5.9.1 report |
+|---|---|---|
+| Android phone UA | Tablet `?0` | **Mobile `?1`** |
+| iPhone UA | Desktop `?0` | **Mobile `?1`** |
+| iPad / Android tablet UA | Tablet `?1` | **Tablet `?0`** |
+
+- Phones now use `isMobile:true`; tablets use `hasTouch:true` with
+  `isMobile:false`, which is exactly what real phones/tablets send.
+- The user agent now decides the emulation. If the Device Setting and the chosen
+  UA disagree, the UA wins and a `WARN` explains it in the log.
+- Touch sessions get a physical `screen` and a realistic DPR (3 for phones,
+  2 for tablets), so `window.screen` / `devicePixelRatio` match the device.
+- The same rules apply to Direct, Organic, Referral, Google Maps and RPA replay.
+
+**Every Privacy option was audited and fixed** (34 toggles):
+
+- Privacy is installed at **browser-context** level, so ad popups and background
+  tabs are protected too, not just the first page.
+- Spoofed values are derived from the session UA/device instead of a hardcoded
+  Windows desktop (a mobile session no longer reports `Win32` / 1920x1080).
+- Fixed: DNS prefetch removal, Referer Control (real navigation + subresources
+  are sent with no Referer; `document.referrer` is blank), Cookie Sanitization
+  (blocks writes and deletes existing `_ga`/`_fbp`/... cookies), ETag clearing,
+  WebGL, Canvas, Audio, Font, ClientRects, WebRTC, sensors and fake device APIs.
+- If a Traffic Source referrer is configured it wins over Referer Control (with
+  a warning), so marketing attribution is not silently lost.
+
+Run the automated audit on any OS:
+
+```bash
+npm run test:privacy          # Windows/macOS
+xvfb-run -a npm run test:privacy   # headless Linux
+```
+
+It checks every feature against real browser APIs and real request headers, then
+the Traffic Source referral interaction and the UA → emulation → `Sec-CH-UA`
+matrix (Windows, Android phone/tablet, iPhone, iPad). Expected output:
+`42 passed, 0 failed` → `ALL CHECKS PASSED`.
+
 ## Features that stay identical on every OS
 
 - Random clicks open links in **background tabs** (no focus stealing)
@@ -24,8 +73,8 @@ Desktop traffic-automation app built with **Electron + Node.js + Playwright**.
 
 ### Windows
 
-1. Download **`TrafficDrive-Setup-5.9.0.exe`** (installer) or
-   **`TrafficDrive-Portable-5.9.0.exe`** (no installation).
+1. Download **`TrafficDrive-Setup-5.9.1.exe`** (installer) or
+   **`TrafficDrive-Portable-5.9.1.exe`** (no installation).
 2. Run it. Because the build is not code-signed, SmartScreen may show
    "Windows protected your PC" → **More info → Run anyway**.
 3. The app opens directly. No Node.js, no Playwright download required.
@@ -36,14 +85,14 @@ every launch (15–30 seconds the first time).
 ### Linux (AppImage — recommended)
 
 ```bash
-chmod +x TrafficDrive-5.9.0-x86_64.AppImage
-./TrafficDrive-5.9.0-x86_64.AppImage
+chmod +x TrafficDrive-5.9.1-x86_64.AppImage
+./TrafficDrive-5.9.1-x86_64.AppImage
 ```
 
 - Ubuntu 22.04+ needs FUSE 2 for AppImage:
   `sudo apt install libfuse2`
 - If your desktop blocks AppImage, extract and run:
-  `./TrafficDrive-5.9.0-x86_64.AppImage --appimage-extract` then
+  `./TrafficDrive-5.9.1-x86_64.AppImage --appimage-extract` then
   `./squashfs-root/TrafficDrive`
 - The app starts with `--no-sandbox` on Linux only, because Ubuntu 24.04+
   restricts unprivileged user namespaces. This does not change campaign
@@ -52,7 +101,7 @@ chmod +x TrafficDrive-5.9.0-x86_64.AppImage
 ### Linux (deb)
 
 ```bash
-sudo apt install ./TrafficDrive-5.9.0-amd64.deb
+sudo apt install ./TrafficDrive-5.9.1-amd64.deb
 trafficdrive
 ```
 
@@ -64,12 +113,74 @@ declared as dependencies.
 If AppImage/deb cannot be used, extract the portable archive and run it:
 
 ```bash
-tar -xzf TrafficDrive-5.9.0-linux-x64-portable.tar.gz
-./TrafficDrive-5.9.0-linux-x64/TrafficDrive
+tar -xzf TrafficDrive-5.9.1-linux-x64-portable.tar.gz
+./TrafficDrive-5.9.1-linux-x64/TrafficDrive
 ```
 
 It contains the same app and bundled Chromium; only the installer integration
 (menu entry, auto-update paths) is missing.
+
+## Run the Linux build in GitHub Codespaces (no Linux PC)
+
+A Codespace is a full Ubuntu machine, so it can run the Linux build and you can
+watch the real browser through your browser tab.
+
+1. Push the repo to GitHub and open it → **Code → Codespaces → Create
+   codespace** (pick the 4-core / 8 GB machine; Chromium needs the RAM).
+2. In the Codespace terminal install the runtime libraries (once per
+   codespace):
+
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y --no-install-recommends \
+     xvfb x11vnc novnc websockify libfuse2 \
+     libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
+     libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+     libgbm1 libasound2t64 libpango-1.0-0 libcairo2
+   ```
+
+   On Ubuntu 22.04 use `libasound2` instead of `libasound2t64`.
+3. Start a virtual display plus the web viewer:
+
+   ```bash
+   Xvfb :99 -screen 0 1920x1080x24 &
+   export DISPLAY=:99
+   x11vnc -display :99 -nopw -forever -shared -rfbport 5900 &
+   websockify --web /usr/share/novnc 6080 localhost:5900 &
+   ```
+
+4. In the **Ports** tab, forward port **6080**, open its URL, and you get the
+   Codespace desktop in a browser tab (open the noVNC page, then
+   `vnc.html`).
+5. Download/extract the Linux artifacts in the terminal:
+
+   ```bash
+   # if you have the file in the repo or uploaded it:
+   chmod +x TrafficDrive-5.9.1-x86_64.AppImage
+   ./TrafficDrive-5.9.1-x86_64.AppImage --appimage-extract
+   ./squashfs-root/TrafficDrive --no-sandbox
+   ```
+
+   If FUSE is unavailable in the container, always use the
+   `--appimage-extract` + `squashfs-root/TrafficDrive` route (step shown above)
+   or the portable tar:
+
+   ```bash
+   tar -xzf TrafficDrive-5.9.1-linux-x64-portable.tar.gz
+   ./TrafficDrive-5.9.1-linux-x64/TrafficDrive --no-sandbox
+   ```
+
+6. The dashboard opens on `http://127.0.0.1:3000`. Forward port **3000** as
+   well if you want to open the dashboard directly in your local browser.
+7. Run campaigns exactly like on Windows. Visible browsers appear inside the
+   noVNC desktop.
+
+Notes:
+
+- Use `--no-sandbox` in containers; the app already adds it on Linux.
+- If Chromium complains about missing libraries, run
+  `npx playwright install-deps chromium` inside the repo once.
+- Codespaces stops when idle; restart Xvfb/noVNC with the commands above.
 
 ## Install from GitHub Actions (no local toolchain)
 
@@ -83,9 +194,11 @@ Every push to `main`, every tag `v*`, or a manual run builds both platforms:
 
 The Linux job runs a real smoke test first (`xvfb-run`) that starts the
 backend, launches the bundled Chromium, renders a page, and checks
-`/api/health` and `/api/browsers/detect`.
+`/api/health` and `/api/browsers/detect`. Both jobs then run the full privacy +
+device audit (`npm run test:privacy`) before building, so a broken toggle fails
+the build instead of shipping.
 
-Pushing a tag (`git tag v5.9.0 && git push origin v5.9.0`) also publishes a
+Pushing a tag (`git tag v5.9.1 && git push origin v5.9.1`) also publishes a
 GitHub Release with all files attached.
 
 ## Build from source
@@ -170,6 +283,8 @@ credentials or recordings.
 | `server.js` | REST API for campaigns, RPA, proxies |
 | `platform.js` | Cross-platform data dirs + browser discovery |
 | `browser-launcher.js` | Bundled/cached/system Chromium resolution |
+| `SessionProfile.js` | UA → device/platform/CH, viewport + screen + DPR rules |
+| `PrivacyGuard.js` | Context-level privacy/fingerprint engine (34 features) |
 | `Directtraffic.js` | Direct traffic campaign |
 | `Organic Search.js` | Search-engine traffic |
 | `SocialTraffic.js` | Referral / social traffic |
@@ -177,10 +292,11 @@ credentials or recordings.
 | `Automation controller.js`, `RpaRecorder.js` | RPA record/replay |
 | `RandomClicker.js` | Random clicks, background tabs |
 | `ProxiedSession.js`, `EgressGuard.js`, `ProxyBrowserCheck.js` | Proxy + IP verification |
-| `PageGuard.js`, `PopupHandler.js`, `PrivacyGuard.js` | Runtime guards |
+| `PageGuard.js`, `PopupHandler.js` | Runtime guards |
 | `i18n.js` | English/Urdu strings |
 | `scripts/prepare-chromium.js` | Copies Chromium into `vendor/chromium` |
 | `scripts/smoke-test.js` | Backend + browser + detection smoke test |
+| `scripts/privacy-test.js` | One-by-one privacy + device matrix test |
 | `electron-builder.yml` | Installer configuration |
 
 ## Hindi / Roman Urdu quick start
@@ -192,11 +308,14 @@ credentials or recordings.
    git push -u origin main
    ```
 3. GitHub → **Actions** → *Build installers* → **Run workflow**.
-4. Windows ke liye `TrafficDrive-Setup-5.9.0.exe`, Linux ke liye
-   `TrafficDrive-5.9.0-x86_64.AppImage` download karo.
+4. Windows ke liye `TrafficDrive-Setup-5.9.1.exe`, Linux ke liye
+   `TrafficDrive-5.9.1-x86_64.AppImage` download karo.
 5. Linux par: `chmod +x TrafficDrive-*.AppImage` phir double-click / run.
 6. Source se chalana ho to: `npm install` → `npx playwright install chromium`
    → `npm start`.
+7. Linux Codespaces me chalane ke liye upar wala
+   **"Run the Linux build in GitHub Codespaces"** section follow karo
+   (`Xvfb` + `x11vnc` + noVNC port `6080`, phir `--no-sandbox`).
 
 ## License
 

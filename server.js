@@ -30,6 +30,14 @@ const net = require('net');
 const socks = require('socks'); // SOCKS4/5 proxy support
 const extractZip = require('extract-zip'); // Browser zip extraction
 const platform = require('./platform.js'); // Cross-platform paths / browsers
+const {
+  resolveSessionDevice,
+  uaPlatform,
+  uaChPlatform,
+  uaBrands,
+  physicalScreen,
+} = require('./SessionProfile.js');
+const { installPrivacyGuard, privacyContextOptions } = require('./PrivacyGuard.js');
 
 // --- Traffic modules -------------------------------------------------------
 // Lazy-loaded to avoid blocking startup
@@ -312,8 +320,12 @@ function rpaPickUserAgent(opts, index) {
 // Mobile resolutions chosen in the UI are physical device pixels (e.g.
 // 1080x2340). A browser viewport is CSS pixels, so convert with a device scale
 // factor - otherwise a "mobile" session would render the desktop layout.
-function rpaPickViewport(opts, index) {
-  const device = opts.device || 'desktop';
+function rpaPickViewport(opts, index, ua) {
+  const selectedDevice = opts.device || 'desktop';
+  // The UA is what the visited site sees; emulation must follow it (same rule
+  // as the campaign modules) or Android/iOS hits are reported as Tablet/Desktop.
+  const device = resolveSessionDevice(selectedDevice, ua);
+  const deviceChanged = device !== selectedDevice;
   const pickFrom = (arr, i) => {
     if (!Array.isArray(arr) || !arr.length) return null;
     const item = arr[i % arr.length];
@@ -321,9 +333,9 @@ function rpaPickViewport(opts, index) {
     if (item && typeof item === 'object') return { width: parseInt(item.width, 10) || 0, height: parseInt(item.height, 10) || 0 };
     return null;
   };
-  const rotated = pickFrom(opts.autoRotateResolutions, Math.max(0, index - 1));
-  const baseW = parseInt(opts.viewportWidth, 10) || 1280;
-  const baseH = parseInt(opts.viewportHeight, 10) || 800;
+  const rotated = deviceChanged ? null : pickFrom(opts.autoRotateResolutions, Math.max(0, index - 1));
+  const baseW = parseInt(opts.viewportWidth, 10) || (device === 'mobile' ? 390 : (device === 'tablet' ? 768 : 1280));
+  const baseH = parseInt(opts.viewportHeight, 10) || (device === 'mobile' ? 844 : (device === 'tablet' ? 1024 : 800));
   const chosen = rotated || { width: baseW, height: baseH };
 
   if (device === 'mobile' || device === 'tablet') {
@@ -340,9 +352,29 @@ function rpaPickViewport(opts, index) {
       w = Math.round(w / scale);
       h = Math.round(h / scale);
     }
-    return { width: w, height: h, isMobile: true, hasTouch: true, deviceScaleFactor: scale };
+    // Phones report Sec-CH-UA-Mobile:?1; tablets are touch devices that must
+    // report ?0, otherwise ad networks count them as phones. A CSS-size value
+    // still needs a real mobile/tablet DPR.
+    if (scale === 1) scale = device === 'tablet' ? 2 : 3;
+    return {
+      width: w,
+      height: h,
+      isMobile: device === 'mobile',
+      hasTouch: true,
+      deviceScaleFactor: scale,
+      device,
+      deviceChanged,
+    };
   }
-  return { width: chosen.width || 1280, height: chosen.height || 800, isMobile: false, hasTouch: false, deviceScaleFactor: 1 };
+  return {
+    width: chosen.width || 1280,
+    height: chosen.height || 800,
+    isMobile: false,
+    hasTouch: false,
+    deviceScaleFactor: 1,
+    device,
+    deviceChanged,
+  };
 }
 
 // Turn a loaded proxy record into Playwright's { proxy: {...} } context option.
@@ -419,14 +451,39 @@ async function rpaReplayOnce(actions, opts) {
 
   try {
     // Optional traffic-source spoofing for the replay as well.
+    let trafficSourceResult = { applied: false, referrer: '' };
     if (opts.trafficCfg) {
       try {
-        await require('./TrafficSource.js').installTrafficSource(context, opts.trafficCfg, {
+        trafficSourceResult = await require('./TrafficSource.js').installTrafficSource(context, opts.trafficCfg, {
           targetUrl: (actions.find(a => a.url) || {}).url || '',
           log: (msg, type) => log(msg, type),
-        });
+        }) || { applied: false, referrer: '' };
       } catch (_) {}
     }
+
+    // Privacy / anti-detection features apply to the RPA replay too. Install
+    // on the context before the first page so every recorded tab and popup is
+    // covered, and align the spoofed identity with the replay UA/device.
+    const rpaUa = (opts.contextOpts && opts.contextOpts.userAgent) || '';
+    const rpaDevice = resolveSessionDevice(opts.device || 'desktop', rpaUa);
+    const rpaVp = Object.assign({}, (opts.contextOpts && opts.contextOpts.viewport) || {}, {
+      deviceScaleFactor: (opts.contextOpts && opts.contextOpts.deviceScaleFactor) || 1,
+      hasTouch: !!(opts.contextOpts && opts.contextOpts.hasTouch),
+    });
+    await installPrivacyGuard(context, {
+      privacyFeatures: opts.privacyFeatures || [],
+      privacyLevel: opts.privacyLevel || 'standard',
+      timezone: (session.geo && session.geo.timezone) || '',
+      ua: rpaUa,
+      platform: uaPlatform(rpaUa),
+      chPlatform: uaChPlatform(rpaUa),
+      brands: uaBrands(rpaUa),
+      device: rpaDevice,
+      viewport: rpaVp,
+      hasTouch: !!rpaVp.hasTouch,
+      trafficReferrer: trafficSourceResult && trafficSourceResult.applied ? trafficSourceResult.referrer : '',
+      onLog: (msg) => log(msg),
+    }).catch(() => {});
 
     // --- Tab bookkeeping --------------------------------------------------
     // tabPages maps a recorded tab id to a live Playwright page.
@@ -792,13 +849,21 @@ async function rpaPlaySessionWorker(actions, opts, sessionId) {
       rpaPushLog(rpaPlayState, `[${tag}] Replay ${i + 1}/${opts.loop} started via ${proxyText}`, 'info');
       try {
         const uaForRound = rpaPickUserAgent(opts, i + 1);
-        const vpForRound = rpaPickViewport(opts, i + 1);
+        const vpForRound = rpaPickViewport(opts, i + 1, uaForRound);
+        if (vpForRound.deviceChanged) {
+          rpaPushLog(rpaPlayState, `[${tag}] Device Setting was "${opts.device}" but the user agent is ${vpForRound.device} - ${vpForRound.device} emulation (Sec-CH-UA-Mobile) applied so trackers see the correct device.`, 'warning');
+        }
         const contextOpts = {
           viewport: { width: vpForRound.width, height: vpForRound.height },
           isMobile: !!vpForRound.isMobile,
           hasTouch: !!vpForRound.hasTouch,
           deviceScaleFactor: vpForRound.deviceScaleFactor || 1,
         };
+        if (vpForRound.hasTouch) {
+          const screenSize = physicalScreen(vpForRound);
+          if (screenSize) contextOpts.screen = screenSize;
+        }
+        Object.assign(contextOpts, privacyContextOptions(opts.privacyFeatures || []));
         if (uaForRound) contextOpts.userAgent = uaForRound;
         const result = await rpaReplayOnce(actions, {
           ...opts,
@@ -2605,6 +2670,14 @@ async function handleRequest(req, res) {
     // Same UA / device / resolution rules as the campaign modules.
     const uaAutoRotate = body.uaAutoRotate === true || body.uaMode === 'rotate';
     const device = body.device === 'mobile' || body.device === 'tablet' ? body.device : 'desktop';
+    // Privacy page toggles travel with the replay exactly like they do with the
+    // campaign modules.
+    const privacyFeatures = Array.isArray(body.privacyFeatures)
+      ? body.privacyFeatures.filter(x => typeof x === 'string')
+      : [];
+    const privacyLevel = ['standard', 'balanced', 'stealth'].includes(body.privacyLevel)
+      ? body.privacyLevel
+      : 'standard';
 
     rpaPlayState.logs = [];
     rpaPlayLoop(actions, {
@@ -2625,6 +2698,8 @@ async function handleRequest(req, res) {
       userAgents: Array.isArray(body.userAgents) ? body.userAgents : [],
       uaAutoRotate,
       device,
+      privacyFeatures,
+      privacyLevel,
       viewportWidth: parseInt(body.viewportWidth, 10) || 1280,
       viewportHeight: parseInt(body.viewportHeight, 10) || 800,
       autoRotateResolutions: Array.isArray(body.autoRotateResolutions) ? body.autoRotateResolutions : null,

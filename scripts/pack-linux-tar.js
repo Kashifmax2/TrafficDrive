@@ -5,8 +5,8 @@
 // extraction. This post-step writes a proper ustar archive so the result can
 // be extracted and run directly:
 //
-//   tar -xzf TrafficDrive-5.9.0-linux-x64-portable.tar.gz
-//   ./TrafficDrive-5.9.0-linux-x64/TrafficDrive
+//   tar -xzf TrafficDrive-5.9.1-linux-x64-portable.tar.gz
+//   ./TrafficDrive-5.9.1-linux-x64/TrafficDrive
 //
 // Linux AppImage / deb releases should still be built on Linux (GitHub
 // Actions) where executable bits and symlinks are preserved natively.

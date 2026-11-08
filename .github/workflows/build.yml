@@ -27,6 +27,9 @@ jobs:
       - name: Prepare bundled Chromium
         run: npm run chromium:prepare
 
+      - name: Privacy features + device matrix test
+        run: npm run test:privacy
+
       - name: Build NSIS + portable EXE
         run: npm run build:win
 
@@ -59,6 +62,9 @@ jobs:
 
       - name: Runtime smoke test (backend + browser + detection)
         run: xvfb-run -a npm run smoke
+
+      - name: Privacy features + device matrix test
+        run: xvfb-run -a npm run test:privacy
 
       - name: Build AppImage + deb
         run: npm run build:linux
