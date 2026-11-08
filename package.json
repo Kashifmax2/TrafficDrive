@@ -4,7 +4,7 @@
   "description": "TrafficDrive - Desktop Traffic Automation Application",
   "main": "main.js",
   "desktopName": "trafficdrive.desktop",
-  "author": "TrafficDrive",
+  "author": { "name": "TrafficDrive", "email": "support@trafficdrive.app" },
   "license": "MIT",
   "scripts": {
     "start": "electron .",
@@ -12,8 +12,8 @@
     "chromium:prepare": "node scripts/prepare-chromium.js",
     "smoke": "node scripts/smoke-test.js",
     "test:privacy": "node scripts/privacy-test.js",
-    "build:win": "npm run chromium:prepare && electron-builder --win nsis portable",
-    "build:linux": "npm run chromium:prepare && electron-builder --linux AppImage deb",
+    "build:win": "npm run chromium:prepare && electron-builder --win nsis portable --publish never",
+    "build:linux": "npm run chromium:prepare && electron-builder --linux AppImage deb --publish never",
     "build:linux:dir": "npm run chromium:prepare && electron-builder --linux dir --x64",
     "pack:linux:tar": "node scripts/pack-linux-tar.js",
     "build:dir": "npm run chromium:prepare && electron-builder --dir"

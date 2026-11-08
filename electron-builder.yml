@@ -55,6 +55,9 @@ portable:
   artifactName: TrafficDrive-Portable-${version}.${ext}
 
 linux:
+  # .deb packages must declare a maintainer (electron-builder reads the
+  # package.json author first; this is the explicit fallback/override).
+  maintainer: TrafficDrive <support@trafficdrive.app>
   target:
     - target: AppImage
       arch:
