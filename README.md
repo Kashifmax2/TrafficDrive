@@ -125,62 +125,71 @@ It contains the same app and bundled Chromium; only the installer integration
 A Codespace is a full Ubuntu machine, so it can run the Linux build and you can
 watch the real browser through your browser tab.
 
+### One command
+
 1. Push the repo to GitHub and open it → **Code → Codespaces → Create
-   codespace** (pick the 4-core / 8 GB machine; Chromium needs the RAM).
-2. In the Codespace terminal install the runtime libraries (once per
-   codespace):
+   codespace** (pick the **4-core / 8 GB** machine; Chromium needs the RAM).
+2. In the Codespace terminal:
 
    ```bash
-   sudo apt-get update
-   sudo apt-get install -y --no-install-recommends \
-     xvfb x11vnc novnc websockify libfuse2 \
-     libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
-     libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
-     libgbm1 libasound2t64 libpango-1.0-0 libcairo2
+   bash scripts/codespaces.sh
    ```
 
-   On Ubuntu 22.04 use `libasound2` instead of `libasound2t64`.
-3. Start a virtual display plus the web viewer:
+   This installs Xvfb / x11vnc / noVNC / Chromium libraries (once per
+   codespace), starts a 1600x900 virtual desktop, downloads and extracts the
+   `5.9.1` AppImage, and launches TrafficDrive.
+3. Open the **Ports** tab → port **6080** → add `/vnc.html`:
 
-   ```bash
-   Xvfb :99 -screen 0 1920x1080x24 &
-   export DISPLAY=:99
-   x11vnc -display :99 -nopw -forever -shared -rfbport 5900 &
-   websockify --web /usr/share/novnc 6080 localhost:5900 &
+   ```
+   https://<your-codespace>-6080.app.github.dev/vnc.html
    ```
 
-4. In the **Ports** tab, forward port **6080**, open its URL, and you get the
-   Codespace desktop in a browser tab (open the noVNC page, then
-   `vnc.html`).
-5. Download/extract the Linux artifacts in the terminal:
+   That is the desktop. Campaign browser windows appear there.
+4. The dashboard listens on `http://127.0.0.1:3000` (port **3000** is already
+   forwarded if you prefer opening it directly).
+5. Press `Ctrl+C` to stop the app. The desktop and viewer keep running, so
+   `bash scripts/codespaces.sh` starts the app again instantly.
 
-   ```bash
-   # if you have the file in the repo or uploaded it:
-   chmod +x TrafficDrive-5.9.1-x86_64.AppImage
-   ./TrafficDrive-5.9.1-x86_64.AppImage --appimage-extract
-   ./squashfs-root/TrafficDrive --no-sandbox
-   ```
+The script also works on any headless Ubuntu/Debian machine (VPS, container).
+Set `TD_VERSION=5.9.1` to pick a different release.
 
-   If FUSE is unavailable in the container, always use the
-   `--appimage-extract` + `squashfs-root/TrafficDrive` route (step shown above)
-   or the portable tar:
+### Manual steps (or when the script cannot run)
 
-   ```bash
-   tar -xzf TrafficDrive-5.9.1-linux-x64-portable.tar.gz
-   ./TrafficDrive-5.9.1-linux-x64/TrafficDrive --no-sandbox
-   ```
+```bash
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends \
+  xvfb x11vnc novnc websockify openbox libfuse2 \
+  libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
+  libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+  libgbm1 libasound2t64 libpango-1.0-0 libcairo2 libgtk-3-0
 
-6. The dashboard opens on `http://127.0.0.1:3000`. Forward port **3000** as
-   well if you want to open the dashboard directly in your local browser.
-7. Run campaigns exactly like on Windows. Visible browsers appear inside the
-   noVNC desktop.
+Xvfb :99 -screen 0 1600x900x24 &
+export DISPLAY=:99
+openbox &
+x11vnc -display :99 -nopw -forever -shared -rfbport 5900 &
+websockify --web /usr/share/novnc 6080 localhost:5900 &
+
+chmod +x TrafficDrive-5.9.1-x86_64.AppImage
+./TrafficDrive-5.9.1-x86_64.AppImage --appimage-extract
+./squashfs-root/TrafficDrive --no-sandbox
+```
+
+On Ubuntu 22.04 use `libasound2` instead of `libasound2t64`. If FUSE is
+unavailable in the container, always use the `--appimage-extract` route above,
+or the portable tar:
+
+```bash
+tar -xzf TrafficDrive-5.9.1-linux-x64-portable.tar.gz
+./TrafficDrive-5.9.1-linux-x64/TrafficDrive --no-sandbox
+```
 
 Notes:
 
 - Use `--no-sandbox` in containers; the app already adds it on Linux.
 - If Chromium complains about missing libraries, run
   `npx playwright install-deps chromium` inside the repo once.
-- Codespaces stops when idle; restart Xvfb/noVNC with the commands above.
+- Codespaces stops when idle; rerun `bash scripts/codespaces.sh` after it
+  resumes (it skips everything that is already running).
 
 ## Install from GitHub Actions (no local toolchain)
 
