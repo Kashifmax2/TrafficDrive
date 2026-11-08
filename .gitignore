@@ -1,0 +1,35 @@
+# Dependencies / build output
+node_modules/
+dist/
+build/
+out/
+
+# Packaged Electron data (never commit)
+resources/
+*.asar
+*.asar.backup
+*.asar.bak*
+*.bak
+
+# Local runtime data (contains YOUR proxies, schedules, recordings)
+proxies.json
+schedule.json
+recordings/
+sessions/
+temp/
+logs/
+*.log
+debug.log
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key

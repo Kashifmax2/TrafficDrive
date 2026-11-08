@@ -1,0 +1,20 @@
+{
+  "name": "trafficdrive",
+  "version": "5.9.0",
+  "description": "TrafficDrive - Desktop Traffic Automation Application",
+  "main": "main.js",
+  "author": "TrafficDrive",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "server": "node -e \"require('./server.js').startServer()\""
+  },
+  "dependencies": {
+    "playwright": "^1.63.0",
+    "socks": "^2.8.10",
+    "extract-zip": "^2.0.1"
+  },
+  "devDependencies": {
+    "electron": "latest"
+  }
+}
