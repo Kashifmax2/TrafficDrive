@@ -96,6 +96,56 @@ async function main() {
       if (helpers.url !== 'https://example.com/' || helpers.ref !== 'https://facebook.com/' || !helpers.toast) {
         throw new Error('Dashboard helpers missing: ' + JSON.stringify(helpers));
       }
+      // A brand-new install must not ship demo campaigns or fake totals.
+      const freshCampaigns = await page.evaluate(() => ({
+        total: document.getElementById('campStatTotal').textContent,
+        sessions: document.getElementById('campStatSessions').textContent,
+        visits: document.getElementById('campStatVisits').textContent,
+        cards: document.querySelectorAll('#campList .camp-card').length,
+        empty: document.getElementById('campEmpty').style.display,
+        badge: document.getElementById('campBadge').textContent,
+      }));
+      if (freshCampaigns.total !== '0' || freshCampaigns.sessions !== '0' || freshCampaigns.visits !== '0'
+          || freshCampaigns.cards !== 0 || freshCampaigns.empty === 'none' || freshCampaigns.badge !== '0') {
+        throw new Error('Fresh install is not empty: ' + JSON.stringify(freshCampaigns));
+      }
+      // Older builds saved demo cards; they must be dropped on load while real
+      // campaigns survive untouched.
+      const demoCleanup = await page.evaluate(() => {
+        localStorage.setItem('trafficdrive_campaigns', JSON.stringify([
+          {name:'Ecommerce Store Boost',url:'https://mystore.com — Organic Search',mode:'organic',stats:['8,240','41,200']},
+          {name:'My Real Campaign',url:'https://real.example.com — Direct Traffic',mode:'direct',stats:['10','25']},
+        ]));
+        loadCampaigns();
+        return {
+          cards: document.querySelectorAll('#campList .camp-card').length,
+          names: [...document.querySelectorAll('#campList .camp-name')].map(e=>e.textContent),
+          total: document.getElementById('campStatTotal').textContent,
+          sessions: document.getElementById('campStatSessions').textContent,
+          visits: document.getElementById('campStatVisits').textContent,
+          empty: document.getElementById('campEmpty').style.display,
+          saved: JSON.parse(localStorage.getItem('trafficdrive_campaigns')||'[]').length,
+        };
+      });
+      if (demoCleanup.cards !== 1 || demoCleanup.names[0] !== 'My Real Campaign'
+          || demoCleanup.total !== '1' || demoCleanup.sessions !== '10' || demoCleanup.visits !== '25'
+          || demoCleanup.empty !== 'none' || demoCleanup.saved !== 1) {
+        throw new Error('Demo campaign cleanup failed: ' + JSON.stringify(demoCleanup));
+      }
+      const emptied = await page.evaluate(() => {
+        localStorage.removeItem('trafficdrive_campaigns');
+        loadCampaigns();
+        return {
+          cards: document.querySelectorAll('#campList .camp-card').length,
+          total: document.getElementById('campStatTotal').textContent,
+          empty: document.getElementById('campEmpty').style.display,
+          badge: document.getElementById('campBadge').textContent,
+        };
+      });
+      if (emptied.cards !== 0 || emptied.total !== '0' || emptied.empty === 'none' || emptied.badge !== '0') {
+        throw new Error('Empty campaign state failed: ' + JSON.stringify(emptied));
+      }
+      console.log('[smoke] campaigns start empty + demo cleanup: OK');
       const persisted = await page.evaluate(() => {
         currentResCategory = 'mobile';
         currentResolution = { width: 1366, height: 768 };

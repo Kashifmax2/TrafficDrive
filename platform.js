@@ -1,8 +1,8 @@
 // platform.js
 // Cross-platform paths and browser discovery for Windows, Linux and macOS.
 //
-// Windows behaviour is kept byte-for-byte identical to the previous release:
-//   data:  %LOCALAPPDATA%\NGF NOMI TOOLS
+// Windows behaviour is kept compatible with previous releases:
+//   data:  %LOCALAPPDATA%\KG TRF Tool (migrated from %LOCALAPPDATA%\NGF NOMI TOOLS)
 //   cache: %LOCALAPPDATA%\ms-playwright
 //   exes:  chrome-win64\chrome.exe / chrome-win\chrome.exe
 //
@@ -20,15 +20,37 @@ const IS_WIN = process.platform === 'win32';
 const IS_MAC = process.platform === 'darwin';
 const IS_LINUX = process.platform === 'linux';
 
-const APP_FOLDER = 'NGF NOMI TOOLS';
+const APP_FOLDER = 'KG TRF Tool';
+const LEGACY_APP_FOLDER = 'NGF NOMI TOOLS';
 
 // --- Data directories ------------------------------------------------------
+
+// One-time move from the old product folder. A rename is instant on the same
+// volume; if a file is locked we fall back to a copy, and if that also fails we
+// keep using the legacy folder for this session so no data is ever lost.
+function migrateWindowsDataDir(base) {
+  const legacy = path.join(base, LEGACY_APP_FOLDER);
+  const target = path.join(base, APP_FOLDER);
+  if (legacy === target || !fs.existsSync(legacy)) return target;
+  if (fs.existsSync(target)) return target;
+  try {
+    fs.renameSync(legacy, target);
+    return target;
+  } catch (_) { /* locked by a running instance — try a copy */ }
+  try {
+    fs.cpSync(legacy, target, { recursive: true });
+    return target;
+  } catch (_) {
+    try { fs.rmSync(target, { recursive: true, force: true }); } catch (_) {}
+    return legacy;
+  }
+}
 
 // Rendered dashboard/backend data (proxies.json, schedule.json, browsers/).
 function appDataDir() {
   if (IS_WIN) {
     const base = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
-    return path.join(base, APP_FOLDER);
+    return migrateWindowsDataDir(base);
   }
   if (IS_MAC) {
     return path.join(os.homedir(), 'Library', 'Application Support', 'TrafficDrive');

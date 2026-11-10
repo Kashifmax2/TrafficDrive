@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KG TRF Tool 5.9.3</title>
+<title>KG TRF Tool 5.9.4</title>
 <script>
 /* API base shim ------------------------------------------------------------
    The Electron app opens index.html over file:// and talks to the loopback
@@ -55,6 +55,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);display:flex;h
 .console{background:var(--inp);font-family:var(--mono);font-size:12px;padding:13px 15px;min-height:140px;max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;}.console::-webkit-scrollbar{width:3px;}.console::-webkit-scrollbar-thumb{background:var(--bdr2);}.lr{display:flex;gap:8px;align-items:flex-start;line-height:1.6;}.lts{color:#3a3a5a;flex-shrink:0;}.ltag{font-weight:700;flex-shrink:0;font-size:11px;}.ltag.info{color:var(--pl);}.ltag.success{color:var(--grn);}.ltag.error{color:var(--red);}.ltag.warn{color:var(--ylw);}.lmsg{color:#8080a0;}.lmsg.success{color:var(--grn);}.lmsg.error{color:var(--red);}.lmsg.warn{color:var(--ylw);}
 .ptable{width:100%;border-collapse:collapse;font-size:12.5px;}.ptable th{text-align:left;padding:8px 10px;font-size:11px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--bdr);position:sticky;top:0;background:var(--card2);z-index:1;}.ptable td{padding:9px 10px;border-bottom:1px solid rgba(37,37,56,.6);color:var(--t2);font-family:var(--mono);}.ptable tr:hover td{background:var(--card2);}.ptable tr:last-child td{border-bottom:none;}.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}.badge.ok{background:var(--grndim);color:var(--grn);}.badge.dead{background:var(--reddim);color:var(--red);}.badge.check{background:var(--ylwdim);color:var(--ylw);}.badge.p{background:var(--pdim);color:var(--pl);}
 .px-scroll{max-height:480px;overflow-y:auto;overflow-x:hidden;border-radius:0 0 var(--r) var(--r);}.px-scroll::-webkit-scrollbar{width:8px;}.px-scroll::-webkit-scrollbar-track{background:var(--bg);}.px-scroll::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px;}.px-scroll::-webkit-scrollbar-thumb:hover{background:var(--t3);}
+.camp-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:48px 20px;text-align:center;border:1px dashed var(--bdr2);border-radius:var(--r);background:var(--card2);}.camp-empty-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--pdim);color:var(--pl);}.camp-empty-title{font-size:15px;font-weight:600;color:var(--t1);}.camp-empty-sub{font-size:12.5px;color:var(--t3);max-width:380px;line-height:1.6;}.camp-empty .btn{margin-top:4px;}
 .camp-card{background:var(--card2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;transition:all var(--trans);cursor:default;}.camp-card:hover{border-color:var(--bdr2);}.camp-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}.camp-info{flex:1;min-width:0;}.camp-name{font-size:13.5px;font-weight:600;color:var(--t1);margin-bottom:2px;}.camp-url{font-size:11.5px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.camp-cat{font-size:10.5px;color:var(--pl);margin-top:3px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.camp-stats{display:flex;gap:14px;flex-shrink:0;}.cstat{text-align:right;}.cstat-val{font-size:14px;font-weight:600;font-family:var(--mono);}.cstat-lbl{font-size:10.5px;color:var(--t3);margin-top:1px;}.camp-status{flex-shrink:0;}.camp-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .stabs{display:flex;gap:0;border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;margin-bottom:16px;}.stab{flex:1;padding:9px;text-align:center;font-size:12.5px;font-weight:500;color:var(--t2);cursor:pointer;background:var(--inp);transition:all var(--trans);border-right:1px solid var(--bdr);}.stab:last-child{border-right:none;}.stab:hover{background:var(--card2);color:var(--t1);}.stab.active{background:var(--pdim);color:var(--pl);}.stab-content{display:none;}.stab-content.active{display:block;}
 .faq{border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;margin-bottom:8px;}.faq-q{padding:13px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--t1);display:flex;justify-content:space-between;align-items:center;transition:background var(--trans);}.faq-q:hover{background:var(--card2);}.faq-a{display:none;padding:0 16px 14px;font-size:13px;color:var(--t2);line-height:1.7;}.faq.open .faq-a{display:block;}.faq.open .faq-q{background:var(--pdim);color:var(--pl);}.faq-arr{transition:transform var(--trans);}.faq.open .faq-arr{transform:rotate(180deg);}
@@ -92,10 +93,10 @@ body.light-mode .rc-adonly-badge{color:#fff;}
 <button class="sb-toggle" onclick="toggleSb()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
 <div class="sb-overlay" onclick="toggleSb()"></div>
 <aside class="sb">
-  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.3</div></div></div>
+  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.4</div></div></div>
   <nav class="sb-nav">
     <div class="ni active" onclick="goPage('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span data-i18n="nav_dashboard">Dashboard</span></div>
-    <div class="ni" onclick="goPage('campaigns',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg><span data-i18n="nav_campaigns">Campaigns</span><span class="ni-badge" id="campBadge">3</span></div>
+    <div class="ni" onclick="goPage('campaigns',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg><span data-i18n="nav_campaigns">Campaigns</span><span class="ni-badge" id="campBadge">0</span></div>
     <div class="ni" onclick="goPage('proxies',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg><span data-i18n="nav_proxies">Proxies</span></div>
     <div class="ni" onclick="goPage('settings',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span data-i18n="nav_settings">Settings</span></div>
     <div class="ni" onclick="goPage('automation',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l3 3 7-7"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg><span data-i18n="nav_scroll_system">Scroll System</span></div>
@@ -208,7 +209,7 @@ body.light-mode .rc-adonly-badge{color:#fff;}
     <div class="card" style="margin-top:14px">
       <div class="ch"><div class="ci p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><span class="ct" data-i18n="live_logs">Live Logs</span><div class="ch-right"><button class="btn btn-o" onclick="clearDashLogs()" style="padding:5px 10px;font-size:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span data-i18n="clear">Clear</span></button></div>
           <div id="px-progress"></div></div>
-      <div class="console" id="dashLogs"><div class="lr"><span class="lts">[--:--:--]</span><span class="ltag info">INFO</span><span class="lmsg">Initializing campaign...</span></div><div class="lr"><span class="lts">[--:--:--]</span><span class="ltag success">SUCCESS</span><span class="lmsg success">Connected to API</span></div><div class="lr"><span class="lts">[--:--:--]</span><span class="ltag info">INFO</span><span class="lmsg">Loading proxies...</span></div><div class="lr"><span class="lts">[--:--:--]</span><span class="ltag success">SUCCESS</span><span class="lmsg success">25 proxies loaded successfully</span></div></div>
+      <div class="console" id="dashLogs"></div>
     </div></div>
     <div class="action-bar" style="grid-template-columns:1fr 1fr 1fr 1fr;">
       <button class="big-btn start" id="startBtn" onclick="startCamp()"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span data-i18n="start_campaign">Start Campaign</span></button>
@@ -220,17 +221,21 @@ body.light-mode .rc-adonly-badge{color:#fff;}
 
   <div class="page" id="pg-campaigns"><div class="scroll">
     <div class="stats4">
-      <div class="scard"><div class="scard-val" style="color:var(--pl)">3</div><div class="scard-lbl" data-i18n="total_campaigns">Total Campaigns</div><div class="scard-sub"><span class="up">↑ 1</span> <span data-i18n="this_week">this week</span></div></div>
-      <div class="scard"><div class="scard-val" style="color:var(--grn)">1</div><div class="scard-lbl" data-i18n="active_now">Active Now</div><div class="scard-sub up" data-i18n="running">Running</div></div>
-      <div class="scard"><div class="scard-val" style="color:var(--ylw)">18,420</div><div class="scard-lbl" data-i18n="total_sessions">Total Sessions</div><div class="scard-sub"><span class="up">↑ 4.2%</span> <span data-i18n="vs_last_week">vs last week</span></div></div>
-      <div class="scard"><div class="scard-val" style="color:var(--blu)">94,310</div><div class="scard-lbl" data-i18n="total_visits">Total Visits</div><div class="scard-sub"><span class="up">↑ 7.1%</span> <span data-i18n="vs_last_week">vs last week</span></div></div>
+      <div class="scard"><div class="scard-val" style="color:var(--pl)" id="campStatTotal">0</div><div class="scard-lbl" data-i18n="total_campaigns">Total Campaigns</div><div class="scard-sub"><span data-i18n="campaigns_saved">Saved campaigns</span></div></div>
+      <div class="scard"><div class="scard-val" style="color:var(--grn)" id="campStatActive">0</div><div class="scard-lbl" data-i18n="active_now">Active Now</div><div class="scard-sub"><span data-i18n="campaigns_running_now">Running now</span></div></div>
+      <div class="scard"><div class="scard-val" style="color:var(--ylw)" id="campStatSessions">0</div><div class="scard-lbl" data-i18n="total_sessions">Total Sessions</div><div class="scard-sub"><span data-i18n="campaigns_all_time">All time</span></div></div>
+      <div class="scard"><div class="scard-val" style="color:var(--blu)" id="campStatVisits">0</div><div class="scard-lbl" data-i18n="total_visits">Total Visits</div><div class="scard-sub"><span data-i18n="campaigns_all_time">All time</span></div></div>
     </div>
     <div class="card">
       <div class="ch"><div class="ci p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg></div><span class="ct" data-i18n="all_campaigns">All Campaigns</span><div class="ch-right"><button class="btn btn-p" onclick="newCampaign()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span data-i18n="new_campaign">New Campaign</span></button></div></div>
-      <div class="cb" id="campList">
-        <div class="camp-card" data-mode="organic" data-keywords="ecommerce,online shopping,buy products" data-sessions="1000"><div class="camp-icon" style="background:var(--pdim)">🛒</div><div class="camp-info"><div class="camp-name">Ecommerce Store Boost</div><div class="camp-url">https://mystore.com — Organic Search</div></div><div class="camp-stats"><div class="cstat"><div class="cstat-val" style="color:var(--grn)">8,240</div><div class="cstat-lbl" data-i18n="sessions">Sessions</div></div><div class="cstat"><div class="cstat-val" style="color:var(--pl)">41,200</div><div class="cstat-lbl" data-i18n="visits">Visits</div></div></div><div class="camp-actions"><span class="badge ok">● <span data-i18n="active">Active</span></span><button class="btn btn-g" onclick="runCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><polygon points="5 3 19 12 5 21 5 3"/></svg><span data-i18n="run">Run</span></button><button class="btn btn-danger" onclick="deleteCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span data-i18n="delete">Delete</span></button></div></div>
-        <div class="camp-card" data-mode="gmaps" data-keywords="" data-sessions="1000"><div class="camp-icon" style="background:var(--bludim)">📍</div><div class="camp-info"><div class="camp-name">Local Restaurant Maps</div><div class="camp-url">https://joesburgers.com — Google Maps</div></div><div class="camp-stats"><div class="cstat"><div class="cstat-val" style="color:var(--ylw)">5,180</div><div class="cstat-lbl" data-i18n="sessions">Sessions</div></div><div class="cstat"><div class="cstat-val" style="color:var(--pl)">28,710</div><div class="cstat-lbl" data-i18n="visits">Visits</div></div></div><div class="camp-actions"><span class="badge check">● <span data-i18n="paused">Paused</span></span><button class="btn btn-g" onclick="runCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><polygon points="5 3 19 12 5 21 5 3"/></svg><span data-i18n="run">Run</span></button><button class="btn btn-danger" onclick="deleteCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span data-i18n="delete">Delete</span></button></div></div>
-        <div class="camp-card" data-mode="referral" data-keywords="" data-sessions="1000"><div class="camp-icon" style="background:var(--grndim)">🔗</div><div class="camp-info"><div class="camp-name">Blog Referral Drive</div><div class="camp-url">https://myblog.io — Referral Traffic</div></div><div class="camp-stats"><div class="cstat"><div class="cstat-val" style="color:var(--t2)">5,000</div><div class="cstat-lbl" data-i18n="sessions">Sessions</div></div><div class="cstat"><div class="cstat-val" style="color:var(--pl)">24,400</div><div class="cstat-lbl" data-i18n="visits">Visits</div></div></div><div class="camp-actions"><span class="badge dead">● <span data-i18n="stopped">Stopped</span></span><button class="btn btn-g" onclick="runCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><polygon points="5 3 19 12 5 21 5 3"/></svg><span data-i18n="run">Run</span></button><button class="btn btn-danger" onclick="deleteCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span data-i18n="delete">Delete</span></button></div></div>
+      <div class="cb">
+        <div id="campList"></div>
+        <div class="camp-empty" id="campEmpty">
+          <div class="camp-empty-icon">📋</div>
+          <div class="camp-empty-title" data-i18n="no_campaigns_title">No campaigns yet</div>
+          <div class="camp-empty-sub" data-i18n="no_campaigns_sub">Create your first campaign to start real traffic. Stats stay at zero until a campaign actually runs.</div>
+          <button class="btn btn-p" onclick="newCampaign()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span data-i18n="new_campaign">New Campaign</span></button>
+        </div>
       </div>
     </div>
     <div class="card" id="newCampForm" style="display:none;margin-top:14px">
@@ -920,15 +925,15 @@ body.light-mode .rc-adonly-badge{color:#fff;}
     <div class="card" style="margin-top:14px">
       <div class="cb" style="text-align:center">
         <div style="font-size:13px;font-weight:600;color:var(--t1)" data-i18n="version_info">KG TRF Tool</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.3 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.3</span></div>
+        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.4 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.4</span></div>
         <div style="font-size:11px;color:var(--pl);margin-top:8px;padding:8px;background:var(--pdim);border-radius:6px;border:1px solid rgba(124,58,237,.3)">
-          KG TRF Tool · v5.9.3
+          KG TRF Tool · v5.9.4
         </div>
       </div>
     </div>
   </div></div>
 
-  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.3</div>
+  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.4</div>
 </main>
 
 <input type="hidden" id="internalLinkCount" value="3">
@@ -1714,7 +1719,7 @@ function runCampaign(btn){
   addLog('info',t('loading_campaign')+': '+name+' — '+t('mode_label')+': '+mode+', URL: '+pureUrl);
   setTimeout(()=>{startCamp();},300);
 }
-function saveCampaign(){const name=document.getElementById('nc-name').value.trim();const url=document.getElementById('nc-url').value.trim();if(!name||!url){addLog('error',t('fill_campaign_name_url'));return;}const modeEl=document.getElementById('nc-mode');const modeText=modeEl.options[modeEl.selectedIndex].textContent;const modeVal=modeEl.selectedIndex===0?'organic':modeEl.selectedIndex===1?'direct':modeEl.selectedIndex===2?'referral':'gmaps';const sessions=document.getElementById('nc-sessions').value;const kw=document.getElementById('nc-kw').value;const catEl=document.getElementById('nc-category');const category=catEl?catEl.value:'business';const catText=catEl?catEl.options[catEl.selectedIndex].textContent:'Business';const catLogo=getCategoryLogo(category);const list=document.getElementById('campList');const card=document.createElement('div');card.className='camp-card';card.setAttribute('data-mode',modeVal);card.setAttribute('data-keywords',kw);card.setAttribute('data-sessions',sessions);card.setAttribute('data-category',category);card.innerHTML=`<div class="camp-icon" style="background:${catLogo.bg}">${catLogo.icon}</div><div class="camp-info"><div class="camp-name">${name}</div><div class="camp-url">${url} — ${modeText}</div><div class="camp-cat">${catText}</div></div><div class="camp-stats"><div class="cstat"><div class="cstat-val" style="color:var(--t2)">0</div><div class="cstat-lbl">${t('num_sessions')}</div></div><div class="cstat"><div class="cstat-val" style="color:var(--pl)">0</div><div class="cstat-lbl">${t('total_visits')}</div></div></div><div class="camp-actions"><span class="badge ok">● ${t('active')}</span><button class="btn btn-g" onclick="runCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>${t('run')}</span></button><button class="btn btn-danger" onclick="deleteCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span>${t('delete_btn')}</span></button></div>`;list.appendChild(card);saveCampaigns();document.getElementById('campBadge').textContent=list.querySelectorAll('.camp-card').length;addLog('success',`Campaign "${name}" saved.`);hideNewCamp();}
+function saveCampaign(){const name=document.getElementById('nc-name').value.trim();const url=document.getElementById('nc-url').value.trim();if(!name||!url){addLog('error',t('fill_campaign_name_url'));return;}const modeEl=document.getElementById('nc-mode');const modeText=modeEl.options[modeEl.selectedIndex].textContent;const modeVal=modeEl.selectedIndex===0?'organic':modeEl.selectedIndex===1?'direct':modeEl.selectedIndex===2?'referral':'gmaps';const sessions=document.getElementById('nc-sessions').value;const kw=document.getElementById('nc-kw').value;const catEl=document.getElementById('nc-category');const category=catEl?catEl.value:'business';const catText=catEl?catEl.options[catEl.selectedIndex].textContent:'Business';const catLogo=getCategoryLogo(category);const list=document.getElementById('campList');const card=document.createElement('div');card.className='camp-card';card.setAttribute('data-mode',modeVal);card.setAttribute('data-keywords',kw);card.setAttribute('data-sessions',sessions);card.setAttribute('data-category',category);card.innerHTML=`<div class="camp-icon" style="background:${catLogo.bg}">${catLogo.icon}</div><div class="camp-info"><div class="camp-name">${name}</div><div class="camp-url">${url} — ${modeText}</div><div class="camp-cat">${catText}</div></div><div class="camp-stats"><div class="cstat"><div class="cstat-val" style="color:var(--t2)">0</div><div class="cstat-lbl">${t('num_sessions')}</div></div><div class="cstat"><div class="cstat-val" style="color:var(--pl)">0</div><div class="cstat-lbl">${t('total_visits')}</div></div></div><div class="camp-actions"><span class="badge ok">● ${t('active')}</span><button class="btn btn-g" onclick="runCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>${t('run')}</span></button><button class="btn btn-danger" onclick="deleteCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span>${t('delete_btn')}</span></button></div>`;list.appendChild(card);saveCampaigns();addLog('success',`Campaign "${name}" saved.`);hideNewCamp();}
 
 // Category logo/icon mapping — each category gets a distinct icon + color
 // so campaigns are visually distinguishable in the list.
@@ -2438,6 +2443,31 @@ function setupAutoSave(){
 // Persists the campaign cards in #campList to localStorage so they survive
 // page reloads.
 // ===========================================================================
+// Campaign stats — computed from the cards actually on screen. A fresh
+// install shows zero everywhere until the user creates and runs a campaign.
+function updateCampaignStats(){
+  const list=document.getElementById('campList');
+  const cards=list?[...list.querySelectorAll('.camp-card')]:[];
+  const num=v=>{const n=parseFloat(String(v==null?'':v).replace(/[^0-9.]/g,''));return Number.isFinite(n)?n:0;};
+  let sessions=0,visits=0,active=0;
+  cards.forEach(c=>{
+    const vals=[...c.querySelectorAll('.cstat-val')];
+    sessions+=num(vals[0]?vals[0].textContent:0);
+    visits+=num(vals[1]?vals[1].textContent:0);
+    const badge=c.querySelector('.camp-actions .badge');
+    if(badge&&!badge.classList.contains('dead'))active++;
+  });
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('campStatTotal',String(cards.length));
+  set('campStatActive',String(active));
+  set('campStatSessions',sessions.toLocaleString('en-US'));
+  set('campStatVisits',visits.toLocaleString('en-US'));
+  const badge=document.getElementById('campBadge');
+  if(badge)badge.textContent=String(cards.length);
+  const empty=document.getElementById('campEmpty');
+  if(empty)empty.style.display=cards.length?'none':'flex';
+}
+
 function saveCampaigns(){
   try{
     const list=document.getElementById('campList');
@@ -2453,37 +2483,56 @@ function saveCampaigns(){
       stats:[...c.querySelectorAll('.cstat-val')].map(s=>s.textContent),
     }));
     localStorage.setItem('trafficdrive_campaigns',JSON.stringify(data));
-    const badge=document.getElementById('campBadge');
-    if(badge)badge.textContent=data.length;
   }catch(e){}
+  updateCampaignStats();
+}
+
+// Demo campaigns that older builds shipped. They are filtered out of saved
+// state once so an existing install also starts with a truly empty list,
+// while any real user campaign is left untouched.
+const DEMO_CAMPAIGNS={
+  'Ecommerce Store Boost':'mystore.com',
+  'Local Restaurant Maps':'joesburgers.com',
+  'Blog Referral Drive':'myblog.io',
+};
+function isDemoCampaign(c){
+  if(!c||typeof c!=='object')return false;
+  const name=String(c.name||'').trim();
+  const url=String(c.url||'').toLowerCase();
+  const marker=DEMO_CAMPAIGNS[name];
+  return !!(marker&&url.includes(marker));
 }
 
 function loadCampaigns(){
+  const list=document.getElementById('campList');
+  if(!list)return;
+  let data=[];
   try{
     const saved=localStorage.getItem('trafficdrive_campaigns');
-    if(!saved)return;
-    const data=JSON.parse(saved);
-    const list=document.getElementById('campList');
-    if(!list)return;
-    // Keep the demo cards if no saved data, otherwise replace
-    list.innerHTML='';
-    data.forEach(c=>{
-      const card=document.createElement('div');
-      card.className='camp-card';
-      card.setAttribute('data-mode',c.mode||'organic');
-      card.setAttribute('data-keywords',c.keywords||'');
-      card.setAttribute('data-sessions',c.sessions||'1000');
-      card.setAttribute('data-category',c.category||'business');
-      const modeText=c.url?(c.url.split(' — ')[1]||c.mode):c.mode;
-      const pureUrl=c.url?c.url.split(' — ')[0]:c.url;
-      const catLogo=getCategoryLogo(c.category||'business');
-      const catText=getCategoryText(c.category||'business');
-      card.innerHTML=`<div class="camp-icon" style="background:${catLogo.bg}">${catLogo.icon}</div><div class="camp-info"><div class="camp-name">${c.name}</div><div class="camp-url">${c.url}</div><div class="camp-cat">${catText}</div></div><div class="camp-stats"><div class="cstat"><div class="cstat-val" style="color:var(--t2)">${(c.stats&&c.stats[0])||'0'}</div><div class="cstat-lbl">${t('num_sessions')}</div></div><div class="cstat"><div class="cstat-val" style="color:var(--pl)">${(c.stats&&c.stats[1])||'0'}</div><div class="cstat-lbl">${t('total_visits')}</div></div></div><div class="camp-actions"><span class="badge ok">● ${t('active')}</span><button class="btn btn-g" onclick="runCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>${t('run')}</span></button><button class="btn btn-danger" onclick="deleteCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span>${t('delete_btn')}</span></button></div>`;
-      list.appendChild(card);
-    });
-    const badge=document.getElementById('campBadge');
-    if(badge)badge.textContent=data.length;
-  }catch(e){}
+    if(saved){
+      const parsed=JSON.parse(saved);
+      if(Array.isArray(parsed))data=parsed;
+    }
+  }catch(e){data=[];}
+  const before=data.length;
+  data=data.filter(c=>!isDemoCampaign(c));
+  if(data.length!==before){
+    try{localStorage.setItem('trafficdrive_campaigns',JSON.stringify(data));}catch(e){}
+  }
+  list.innerHTML='';
+  data.forEach(c=>{
+    const card=document.createElement('div');
+    card.className='camp-card';
+    card.setAttribute('data-mode',c.mode||'organic');
+    card.setAttribute('data-keywords',c.keywords||'');
+    card.setAttribute('data-sessions',c.sessions||'1000');
+    card.setAttribute('data-category',c.category||'business');
+    const catLogo=getCategoryLogo(c.category||'business');
+    const catText=getCategoryText(c.category||'business');
+    card.innerHTML=`<div class="camp-icon" style="background:${catLogo.bg}">${catLogo.icon}</div><div class="camp-info"><div class="camp-name">${c.name}</div><div class="camp-url">${c.url}</div><div class="camp-cat">${catText}</div></div><div class="camp-stats"><div class="cstat"><div class="cstat-val" style="color:var(--t2)">${(c.stats&&c.stats[0])||'0'}</div><div class="cstat-lbl">${t('num_sessions')}</div></div><div class="cstat"><div class="cstat-val" style="color:var(--pl)">${(c.stats&&c.stats[1])||'0'}</div><div class="cstat-lbl">${t('total_visits')}</div></div></div><div class="camp-actions"><span class="badge ok">● ${t('active')}</span><button class="btn btn-g" onclick="runCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>${t('run')}</span></button><button class="btn btn-danger" onclick="deleteCampaign(this)" style="margin-left:8px;padding:6px 10px;font-size:11px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span>${t('delete_btn')}</span></button></div>`;
+    list.appendChild(card);
+  });
+  updateCampaignStats();
 }
 
 // Category display text — uses i18n so it follows the active language.
