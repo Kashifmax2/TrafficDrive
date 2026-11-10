@@ -98,7 +98,7 @@ function createWindow() {
       height: 900,
       minWidth: 1100,
       minHeight: 700,
-      title: 'KG TRF Tool v5.9.2',
+      title: 'KG TRF Tool v5.9.3',
       backgroundColor: '#1a1a1a',
       autoHideMenuBar: true,
       icon: path.join(__dirname, 'logo.png'),

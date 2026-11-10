@@ -30,6 +30,9 @@ jobs:
       - name: Privacy features + device matrix test
         run: npm run test:privacy
 
+      - name: Only-ads clicking test
+        run: npm run test:ads
+
       - name: Build NSIS + portable EXE
         run: npm run build:win
 
@@ -65,6 +68,9 @@ jobs:
 
       - name: Privacy features + device matrix test
         run: xvfb-run -a npm run test:privacy
+
+      - name: Only-ads clicking test
+        run: xvfb-run -a npm run test:ads
 
       - name: Build AppImage + deb
         run: npm run build:linux

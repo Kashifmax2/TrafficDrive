@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KG TRF Tool 5.9.2</title>
+<title>KG TRF Tool 5.9.3</title>
 <script>
 /* API base shim ------------------------------------------------------------
    The Electron app opens index.html over file:// and talks to the loopback
@@ -72,14 +72,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);display:flex;h
 .br-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}.br-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px 12px;text-align:center;transition:all var(--trans);cursor:default;display:flex;flex-direction:column;align-items:center;gap:5px;}.br-card:hover{border-color:var(--bdr2);background:var(--card2);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2);}.br-card.br-installed-card{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.05);}.br-logo{width:48px;height:48px;object-fit:contain;border-radius:10px;margin-bottom:2px;}.br-name{font-size:13px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}.br-size{font-size:10px;color:var(--t3);font-weight:600;font-family:var(--mono);}.br-engine{font-size:10px;color:var(--t3);font-weight:500;padding:2px 8px;border-radius:10px;background:var(--card2);}.br-engine.chromium{color:#4285F4;background:rgba(66,133,244,.1);}.br-engine.firefox{color:#FF7139;background:rgba(255,113,57,.1);}.br-engine.other{color:var(--ylw);background:rgba(234,179,8,.1);}.br-installed-badge{font-size:9.5px;font-weight:700;color:var(--grn);background:rgba(34,197,94,.15);padding:2px 8px;border-radius:10px;}.br-dl{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:#fff;background:linear-gradient(135deg,#22c55e,#16a34a);padding:5px 12px;border-radius:14px;text-decoration:none;border:none;cursor:pointer;transition:all .2s;margin-top:2px;font-family:var(--font);}.br-dl:hover{background:linear-gradient(135deg,#16a34a,#15803d);transform:scale(1.04);box-shadow:0 2px 8px rgba(34,197,94,.3);}.br-dl svg{flex-shrink:0;}.br-dl-ext{background:linear-gradient(135deg,#6366f1,#4f46e5);}.br-dl-ext:hover{background:linear-gradient(135deg,#4f46e5,#4338ca);box-shadow:0 2px 8px rgba(99,102,241,.3);}.br-dl.br-launch{background:linear-gradient(135deg,#a855f7,#9333ea);}.br-dl.br-launch:hover{background:linear-gradient(135deg,#9333ea,#7e22ce);box-shadow:0 2px 8px rgba(168,85,247,.3);}.br-dl.br-danger{background:linear-gradient(135deg,#ef4444,#dc2626);}.br-dl.br-danger:hover{background:linear-gradient(135deg,#dc2626,#b91c1c);box-shadow:0 2px 8px rgba(239,68,68,.3);}.br-web{font-size:9.5px;color:var(--t3);text-decoration:none;margin-top:1px;transition:color var(--trans);}.br-web:hover{color:var(--p);text-decoration:underline;}.br-dl-area{display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;}.br-progress-wrap{width:100%;height:6px;background:var(--card2);border-radius:3px;overflow:hidden;margin-top:2px;}.br-progress-bar{height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:3px;transition:width .3s ease;}.br-progress-bar.extracting{background:linear-gradient(90deg,#f59e0b,#d97706);animation:br-ppulse 1s infinite;}.br-progress-detail{display:flex;justify-content:space-between;width:100%;margin-top:2px;gap:4px;}.br-pct{font-size:10px;font-weight:700;color:#22c55e;font-family:var(--mono);}.br-pct-remain{font-size:10px;font-weight:600;color:var(--t3);font-family:var(--mono);}.br-progress-text{font-size:10px;color:var(--t3);font-family:var(--mono);}.br-progress-text.extracting{color:#f59e0b;}.br-progress-text.error{color:var(--red);}.br-installed{font-size:10.5px;font-weight:700;color:#22c55e;display:inline-flex;align-items:center;gap:3px;}.br-installed-card{border-color:rgba(34,197,94,.3)!important;background:rgba(34,197,94,.04)!important;}.br-cancel{background:none;border:1px solid var(--bdr);color:var(--t3);font-size:9px;padding:2px 6px;border-radius:8px;cursor:pointer;margin-top:1px;font-family:var(--font);}.br-cancel:hover{border-color:var(--red);color:var(--red);}@keyframes br-ppulse{0%,100%{opacity:1;}50%{opacity:.5;}}.br-list{display:flex;flex-direction:column;gap:8px;}.br-list-item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;transition:all var(--trans);}.br-list-item:hover{border-color:var(--bdr2);background:var(--card2);}.br-list-item .br-logo{width:32px;height:32px;border-radius:8px;margin:0;}.br-list-item .br-info{flex:1;min-width:0;}.br-list-item .br-name{text-align:left;}.br-list-item .br-size{margin-right:6px;}.br-list-item .br-engine{display:inline-block;margin-top:2px;}.br-list-item .br-dl-area{flex-direction:row;align-items:center;width:auto;gap:6px;}.br-list-item .br-progress-wrap{width:80px;}.br-section{font-size:13px;font-weight:700;color:var(--t2);margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px;}.br-section:first-child{margin-top:0;}.br-section .br-sec-count{font-size:11px;font-weight:500;color:var(--t3);margin-left:auto;}
 .sched-days{display:flex;gap:6px;flex-wrap:wrap;}.sched-day{display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:var(--r);border:1px solid var(--bdr);background:var(--inp);cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);transition:all var(--trans);user-select:none;}.sched-day:hover{border-color:var(--bdr2);background:var(--card2);}.sched-day:has(input:checked){border-color:var(--p2);background:var(--pdim);color:var(--pl);}.sched-day input{display:none;}.sched-cd-unit{text-align:center;}.sched-cd-val{font-size:28px;font-weight:700;font-family:var(--mono);color:var(--ylw);line-height:1.1;}.sched-cd-lbl{font-size:10px;color:var(--t3);margin-top:3px;text-transform:uppercase;letter-spacing:.05em;}.sched-item{background:var(--card2);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:all var(--trans);}.sched-item:hover{border-color:var(--bdr2);}.sched-item-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}.sched-item-info{flex:1;min-width:0;}.sched-item-name{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:2px;}.sched-item-detail{font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.sched-item-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;}.sched-item.active-sched{border-color:var(--ylw);background:rgba(234,179,8,.05);}
 .toast-container{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}.toast{display:flex;align-items:center;gap:10px;padding:14px 24px;border-radius:var(--r2);font-size:13.5px;font-weight:600;color:#fff;pointer-events:auto;animation:toastIn .35s ease,toastOut .4s ease 3.6s forwards;box-shadow:0 8px 30px rgba(0,0,0,.35);max-width:520px;}.toast.success{background:linear-gradient(135deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(135deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(135deg,#3b82f6,#2563eb);}.toast svg{width:18px;height:18px;flex-shrink:0;}@keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(20px)}}
-.px-del{background:transparent;border:1px solid var(--bdr2);color:var(--t3);border-radius:6px;padding:2px 7px;font-size:11px;line-height:16px;cursor:pointer;transition:all var(--trans);}.px-del:hover{border-color:var(--red);color:var(--red);}#px-progress{font-size:12px;color:var(--t3);margin-top:8px;min-height:16px;}.px-menu{position:fixed;display:none;z-index:99999;background:var(--card);border:1px solid var(--bdr2);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.45);min-width:170px;}.px-menu button{display:flex;width:100%;gap:8px;align-items:center;background:transparent;border:0;color:var(--t1);padding:8px 10px;border-radius:6px;font-size:12.5px;cursor:pointer;text-align:left;}.px-menu button:hover{background:rgba(248,81,73,.15);color:var(--red);}</style>
+.px-del{background:transparent;border:1px solid var(--bdr2);color:var(--t3);border-radius:6px;padding:2px 7px;font-size:11px;line-height:16px;cursor:pointer;transition:all var(--trans);}.px-del:hover{border-color:var(--red);color:var(--red);}#px-progress{font-size:12px;color:var(--t3);margin-top:8px;min-height:16px;}.px-menu{position:fixed;display:none;z-index:99999;background:var(--card);border:1px solid var(--bdr2);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.45);min-width:170px;}.px-menu button{display:flex;width:100%;gap:8px;align-items:center;background:transparent;border:0;color:var(--t1);padding:8px 10px;border-radius:6px;font-size:12.5px;cursor:pointer;text-align:left;}.px-menu button:hover{background:rgba(248,81,73,.15);color:var(--red);}
+/* ---- Only click ads (Random Clicks modal, 5.9.3) ---- */
+.rc-adonly{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;margin-bottom:14px;border:1px solid rgba(34,197,94,.28);border-radius:var(--r2);background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(34,197,94,.02));cursor:pointer;transition:all var(--trans);}
+.rc-adonly:hover{border-color:rgba(34,197,94,.5);background:linear-gradient(135deg,rgba(34,197,94,.13),rgba(34,197,94,.04));}
+.rc-adonly.active{border-color:var(--grn);background:linear-gradient(135deg,rgba(34,197,94,.16),rgba(34,197,94,.05));box-shadow:0 0 0 3px rgba(34,197,94,.1);}
+.rc-adonly input[type=checkbox]{width:17px;height:17px;margin-top:1px;accent-color:var(--grn);flex-shrink:0;cursor:pointer;}
+.rc-adonly-body{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.rc-adonly-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.rc-adonly-title{font-size:13px;font-weight:700;color:var(--t1);}
+.rc-adonly-badge{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:#052e16;background:linear-gradient(135deg,#4ade80,#22c55e);padding:2px 8px;border-radius:20px;line-height:1.5;}
+body.light-mode .rc-adonly-badge{color:#fff;}
+.rc-adonly-sub{font-size:11.5px;color:var(--t2);line-height:1.65;}
+.rc-adonly-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;color:var(--grn);background:var(--grndim);border:1px solid rgba(34,197,94,.35);padding:1px 7px;border-radius:20px;margin-right:6px;vertical-align:1px;}
+</style>
 </head>
 <body>
 
 <button class="sb-toggle" onclick="toggleSb()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
 <div class="sb-overlay" onclick="toggleSb()"></div>
 <aside class="sb">
-  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.2</div></div></div>
+  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.3</div></div></div>
   <nav class="sb-nav">
     <div class="ni active" onclick="goPage('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span data-i18n="nav_dashboard">Dashboard</span></div>
     <div class="ni" onclick="goPage('campaigns',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg><span data-i18n="nav_campaigns">Campaigns</span><span class="ni-badge" id="campBadge">3</span></div>
@@ -907,15 +920,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);display:flex;h
     <div class="card" style="margin-top:14px">
       <div class="cb" style="text-align:center">
         <div style="font-size:13px;font-weight:600;color:var(--t1)" data-i18n="version_info">KG TRF Tool</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.2 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.2</span></div>
+        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.3 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.3</span></div>
         <div style="font-size:11px;color:var(--pl);margin-top:8px;padding:8px;background:var(--pdim);border-radius:6px;border:1px solid rgba(124,58,237,.3)">
-          KG TRF Tool · v5.9.2
+          KG TRF Tool · v5.9.3
         </div>
       </div>
     </div>
   </div></div>
 
-  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.2</div>
+  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.3</div>
 </main>
 
 <input type="hidden" id="internalLinkCount" value="3">
@@ -930,6 +943,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);display:flex;h
 <input type="hidden" id="stepRetryAttempts" value="3">
 <input type="hidden" id="stepRetryDelaySec" value="3">
 <input type="hidden" id="randomClickEnabled" value="0">
+<input type="hidden" id="randomClickAdOnly" value="0">
 <input type="hidden" id="randomClickBurstMin" value="3">
 <input type="hidden" id="randomClickBurstMax" value="4">
 <input type="hidden" id="randomClickIntervalMin" value="6">
@@ -983,6 +997,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);display:flex;h
         <span data-i18n="rc_how_body">Visit ke doran pehla click X seconds baad hota hai, phir Y clicks (har click ke beech gap), phir next burst se pehle break. Sab kuch visit time ke andar.</span><br>
         <span style="color:var(--t3)" data-i18n="rc_how_bg">Link naye tab me background me khulta hai — aapka page front me rehta hai aur Back kaam karta hai.</span>
       </div>
+
+      <label class="rc-adonly" id="rcAdOnlyCard" for="rcAdOnly">
+        <input type="checkbox" id="rcAdOnly" onchange="rcAdOnlyChanged()">
+        <span class="rc-adonly-body">
+          <span class="rc-adonly-head">
+            <span class="rc-adonly-title" data-i18n="rc_adonly_title">Only click ads</span>
+            <span class="rc-adonly-badge" data-i18n="rc_adonly_badge">RECOMMENDED</span>
+          </span>
+          <span class="rc-adonly-sub" data-i18n="rc_adonly_sub">Sirf woh ads click honge jo screen par asal me dikh rahe hain aur chal rahe hain. Khali, hidden, blank ya 1×1 ad slots kabhi click nahi honge — page ki khali jagah par bhi click nahi hoga. Har mode (Direct / Organic / Referral / Maps) aur RPA replay me kaam karta hai.</span>
+        </span>
+      </label>
+
       <div style="display:flex;gap:8px;margin-bottom:14px">
         <button type="button" class="btn btn-o" style="flex:1;justify-content:center;font-size:12px" onclick="rcPreset('slow')" data-i18n="rc_preset_slow">Slow</button>
         <button type="button" class="btn btn-o" style="flex:1;justify-content:center;font-size:12px" onclick="rcPreset('normal')" data-i18n="rc_preset_normal">Normal</button>
@@ -1204,6 +1230,7 @@ function rcModalCfg(){
   const rf=document.getElementById('rcRefreshEnabled');
   const sd=document.getElementById('rcScrollDir');
   const rv=document.getElementById('rcRevertNav');
+  const ao=document.getElementById('rcAdOnly');
   return {
     initialDelaySec:rcModalVal('rcInitialDelay',2,0,600),
     burstMin:bMin,
@@ -1220,6 +1247,7 @@ function rcModalCfg(){
     refreshMinSec:refreshMin,
     refreshMaxSec:refreshMax,
     revertNavigation:rv?!!rv.checked:true,
+    adOnly:ao?!!ao.checked:false,
     openInBackground:true
   };
 }
@@ -1240,18 +1268,42 @@ function rcSyncModalFromHidden(){
   const rf=document.getElementById('rcRefreshEnabled'),hr=document.getElementById('randomClickRefresh');if(rf&&hr)rf.checked=hr.value==='1';
   const rv=document.getElementById('rcRevertNav'),hv=document.getElementById('randomClickRevertNav');if(rv&&hv)rv.checked=hv.value!=='0';
   const sd=document.getElementById('rcScrollDir'),hd=document.getElementById('randomClickScrollDir');if(sd&&hd)sd.value=hd.value||'down';
+  const ao=document.getElementById('rcAdOnly'),ho=document.getElementById('randomClickAdOnly');if(ao&&ho)ao.checked=ho.value==='1';
+  rcSyncAdOnlyCard();
   rcUpdateSummary();
+}
+function rcSyncAdOnlyCard(){
+  const card=document.getElementById('rcAdOnlyCard');
+  const cb=document.getElementById('rcAdOnly');
+  if(card&&cb)card.classList.toggle('active',!!cb.checked);
+}
+function rcAdOnlyChanged(){
+  const cb=document.getElementById('rcAdOnly');
+  const h=document.getElementById('randomClickAdOnly');
+  const en=document.getElementById('randomClickEnabled');
+  if(h)h.value=cb&&cb.checked?'1':'0';
+  rcUpdateSummary();
+  // If random clicking is already running, apply the switch immediately instead
+  // of waiting for the user to press Enable again.
+  if(en&&en.value==='1'){
+    updateRandomClickBadge();
+    addAutoLog('info',cb&&cb.checked?'Only-ads clicking enabled: only visible/working ads will be clicked':'Only-ads clicking disabled: random page clicks again');
+    saveFormData();
+  }
 }
 function rcShortSec(ms){const v=(ms/1000);return (Math.round(v*100)/100).toString();}
 function rcUpdateSummary(){
   const el=document.getElementById('rcSummary');if(!el)return;
   const c=rcModalCfg();
+  rcSyncAdOnlyCard();
   const gap=rcShortSec(c.clickGapMinMs)+'–'+rcShortSec(c.clickGapMaxMs)+'s';
   const limit=c.maxClicks?String(c.maxClicks):'unlimited';
-  let html='<b style="color:var(--t1)" data-i18n="rc_summary_title">Summary:</b> ';
-  html+='<span data-i18n="rc_summary_line">pehla click '+c.initialDelaySec+'s baad · '+c.burstMin+'–'+c.burstMax+' clicks (gap '+gap+') · phir '+c.intervalMinSec+'–'+c.intervalMaxSec+'s break · limit: '+limit+'</span>';
-  html+='<br><span style="color:var(--t3)" data-i18n="rc_summary_bg">Links background tab me khulenge — visited page front me rahega.</span> ';
-  if(c.revertNavigation)html+=' <span style="color:var(--t3)" data-i18n="rc_summary_revert">Agar page change ho jaye to wapas visited page par.</span>';
+  let html='<b style="color:var(--t1)">Summary:</b> ';
+  if(c.adOnly)html+='<span class="rc-adonly-tag">ONLY ADS</span>';
+  html+='<span>pehla click '+c.initialDelaySec+'s baad · '+c.burstMin+'–'+c.burstMax+' clicks (gap '+gap+') · phir '+c.intervalMinSec+'–'+c.intervalMaxSec+'s break · limit: '+limit+'</span>';
+  html+='<br><span style="color:var(--t3)">Links background tab me khulenge — visited page front me rahega.</span> ';
+  if(c.revertNavigation)html+=' <span style="color:var(--t3)">Agar page change ho jaye to wapas visited page par.</span>';
+  if(c.adOnly)html+='<br><span style="color:var(--grn)">Ad-only: sirf visible aur working ad slots click honge. Khali, hidden, blank ya 1×1 slot aur normal page area skip ho jayega.</span>';
   el.innerHTML=html;
 }
 function rcPreset(name){
@@ -1273,13 +1325,14 @@ function rcToggleAdvanced(){
 }
 function updateRandomClickBadge(){
   const on=document.getElementById('randomClickEnabled')&&document.getElementById('randomClickEnabled').value==='1';
+  const adOnly=document.getElementById('randomClickAdOnly')&&document.getElementById('randomClickAdOnly').value==='1';
   const badge=document.getElementById('randomClickBadge');
-  if(badge){badge.textContent=on?t('on_status'):t('off_status');badge.style.background=on?'var(--grn)':'var(--red)';}
+  if(badge){badge.textContent=on?(adOnly?'ADS':t('on_status')):t('off_status');badge.style.background=on?'var(--grn)':'var(--red)';}
   const st=document.getElementById('randomClickModalStatus');
   if(st){
     if(on){
       const gap=rcShortSec(rcVal('randomClickClickGapMin',350))+'–'+rcShortSec(rcVal('randomClickClickGapMax',900))+'s';
-      st.textContent=t('rc_current_status')+' '+t('on_status')+': first '+rcVal('randomClickInitialDelay',2)+'s · '+rcVal('randomClickBurstMin',3)+'–'+rcVal('randomClickBurstMax',4)+' clicks (gap '+gap+') · break '+rcVal('randomClickIntervalMin',6)+'–'+rcVal('randomClickIntervalMax',10)+'s · limit '+(rcVal('randomClickMax',0)||'unlimited');
+      st.textContent=t('rc_current_status')+' '+t('on_status')+': first '+rcVal('randomClickInitialDelay',2)+'s · '+rcVal('randomClickBurstMin',3)+'–'+rcVal('randomClickBurstMax',4)+' clicks (gap '+gap+') · break '+rcVal('randomClickIntervalMin',6)+'–'+rcVal('randomClickIntervalMax',10)+'s · limit '+(rcVal('randomClickMax',0)||'unlimited')+(adOnly?' · only ads':'');
     }else{
       st.textContent=t('rc_current_status')+' '+t('off_status');
     }
@@ -1307,10 +1360,11 @@ function enableRandomClicks(){
   set('randomClickRefresh',c.refreshEnabled?1:0);
   set('randomClickScrollDir',c.scrollDirection);
   set('randomClickRevertNav',c.revertNavigation?1:0);
+  set('randomClickAdOnly',c.adOnly?1:0);
   const en=document.getElementById('randomClickEnabled');if(en)en.value='1';
   rcUpdateSummary();
   updateRandomClickBadge();
-  addAutoLog('info','Random clicks enabled: first '+c.initialDelaySec+'s, '+c.burstMin+'-'+c.burstMax+' clicks (gap '+c.clickGapMinMs+'-'+c.clickGapMaxMs+'ms), break '+c.intervalMinSec+'-'+c.intervalMaxSec+'s'+(c.scrollEnabled?' | scroll '+c.scrollDirection:'')+(c.refreshEnabled?' | refresh on':'')+' | links open in background');
+  addAutoLog('info','Random clicks enabled: first '+c.initialDelaySec+'s, '+c.burstMin+'-'+c.burstMax+' clicks (gap '+c.clickGapMinMs+'-'+c.clickGapMaxMs+'ms), break '+c.intervalMinSec+'-'+c.intervalMaxSec+'s'+(c.scrollEnabled?' | scroll '+c.scrollDirection:'')+(c.refreshEnabled?' | refresh on':'')+' | links open in background'+(c.adOnly?' | ONLY ADS (visible/working ads, no empty-space clicks)':''));
   saveFormData();
 }
 function disableRandomClicks(){const en=document.getElementById('randomClickEnabled');if(en)en.value='0';updateRandomClickBadge();addAutoLog('warn','Random clicks disabled');saveFormData();}
@@ -1327,6 +1381,7 @@ function getRandomClickData(){
   const rf=document.getElementById('randomClickRefresh');
   const sd=document.getElementById('randomClickScrollDir');
   const rv=document.getElementById('randomClickRevertNav');
+  const ao=document.getElementById('randomClickAdOnly');
   return{randomClicks:{
     enabled:true,
     initialDelaySec:rcVal('randomClickInitialDelay',2),
@@ -1344,6 +1399,7 @@ function getRandomClickData(){
     refreshMinSec:rcVal('randomClickRefreshMin',30),
     refreshMaxSec:Math.max(rcVal('randomClickRefreshMin',30),rcVal('randomClickRefreshMax',30)),
     revertNavigation:!(rv&&rv.value==='0'),
+    adOnly:!!(ao&&ao.value==='1'),
     openInBackground:true
   }};
 }
@@ -1612,7 +1668,7 @@ function resumeCamp(){if(!isRunning||!isPaused)return;isPaused=false;setStatus('
 
 function updateActionButtons(state){const startBtn=document.getElementById('startBtn');const pauseBtn=document.getElementById('pauseBtn');const resumeBtn=document.getElementById('resumeBtn');const stopBtn=document.getElementById('stopBtn');if(state==='running'){startBtn.disabled=true;pauseBtn.disabled=false;pauseBtn.style.display='flex';resumeBtn.style.display='none';stopBtn.disabled=false;}else if(state==='paused'){startBtn.disabled=true;pauseBtn.style.display='none';resumeBtn.style.display='flex';resumeBtn.disabled=false;stopBtn.disabled=false;}else if(state==='stopped'){startBtn.disabled=false;pauseBtn.disabled=true;pauseBtn.style.display='none';resumeBtn.style.display='none';stopBtn.disabled=true;}}
 
-function enableFormFields(enable){const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','primaryEngine','refPlatform','ua','mapsLoadWaitSec','searchResultWaitSec','websiteLoadWaitSec','typingDelayMs','stepRetryAttempts','stepRetryDelaySec','randomClickEnabled','randomClickBurstMin','randomClickBurstMax','randomClickIntervalMin','randomClickIntervalMax','randomClickInitialDelay','randomClickClickGapMin','randomClickClickGapMax','randomClickRevertNav','randomClickScroll','randomClickScrollAmount','randomClickScrollDir','randomClickMax','randomClickRefresh','randomClickRefreshMin','randomClickRefreshMax','trafficSourceEnabled','trafficSourceMode','trafficSourceSelect','trafficSourceCustomUrl'];fields.forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!enable;});document.querySelectorAll('.mode-card,.mi,.db').forEach(el=>{el.style.pointerEvents=enable?'auto':'none';el.style.opacity=enable?'1':'0.6';});}
+function enableFormFields(enable){const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','primaryEngine','refPlatform','ua','mapsLoadWaitSec','searchResultWaitSec','websiteLoadWaitSec','typingDelayMs','stepRetryAttempts','stepRetryDelaySec','randomClickEnabled','randomClickBurstMin','randomClickBurstMax','randomClickIntervalMin','randomClickIntervalMax','randomClickInitialDelay','randomClickClickGapMin','randomClickClickGapMax','randomClickRevertNav','randomClickAdOnly','randomClickScroll','randomClickScrollAmount','randomClickScrollDir','randomClickMax','randomClickRefresh','randomClickRefreshMin','randomClickRefreshMax','trafficSourceEnabled','trafficSourceMode','trafficSourceSelect','trafficSourceCustomUrl'];fields.forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!enable;});document.querySelectorAll('.mode-card,.mi,.db').forEach(el=>{el.style.pointerEvents=enable?'auto':'none';el.style.opacity=enable?'1':'0.6';});}
 
 function doRefresh(){addLog('info',t('dashboard_refreshed'));}
 function clearDashLogs(){document.getElementById('dashLogs').innerHTML='';addLog('info',t('logs_cleared'));}
@@ -2287,7 +2343,7 @@ const UA_ICONS={
 };
 
 function saveFormData(){
-  const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','scrollMode','scrollDirection','scrollDistance','scrollDuration','scrollPagesToOpen','scrollReadTime','scrollAmount','scrollStayTime','visitTimeMs','internalLinkVisitTimeMs','mapsLoadWaitSec','searchResultWaitSec','websiteLoadWaitSec','typingDelayMs','stepRetryAttempts','stepRetryDelaySec','randomClickEnabled','randomClickBurstMin','randomClickBurstMax','randomClickIntervalMin','randomClickIntervalMax','randomClickInitialDelay','randomClickClickGapMin','randomClickClickGapMax','randomClickRevertNav','randomClickScroll','randomClickScrollAmount','randomClickScrollDir','randomClickMax','randomClickRefresh','randomClickRefreshMin','randomClickRefreshMax','trafficSourceEnabled','trafficSourceMode','trafficSourceSelect','trafficSourceCustomUrl','customResW','customResH','autoRotateThreads'];
+  const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','scrollMode','scrollDirection','scrollDistance','scrollDuration','scrollPagesToOpen','scrollReadTime','scrollAmount','scrollStayTime','visitTimeMs','internalLinkVisitTimeMs','mapsLoadWaitSec','searchResultWaitSec','websiteLoadWaitSec','typingDelayMs','stepRetryAttempts','stepRetryDelaySec','randomClickEnabled','randomClickBurstMin','randomClickBurstMax','randomClickIntervalMin','randomClickIntervalMax','randomClickInitialDelay','randomClickClickGapMin','randomClickClickGapMax','randomClickRevertNav','randomClickAdOnly','randomClickScroll','randomClickScrollAmount','randomClickScrollDir','randomClickMax','randomClickRefresh','randomClickRefreshMin','randomClickRefreshMax','trafficSourceEnabled','trafficSourceMode','trafficSourceSelect','trafficSourceCustomUrl','customResW','customResH','autoRotateThreads'];
   const data={};
   fields.forEach(id=>{const el=document.getElementById(id);if(el)data[id]=el.value;});
   data.curMode=curMode;
@@ -2341,7 +2397,7 @@ function loadFormData(){
     const saved=localStorage.getItem('trafficdrive_form');
     if(!saved){updateRandomClickBadge();updateTrafficSourceBadge();return;}
     const data=JSON.parse(saved);
-    const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','scrollMode','scrollDirection','scrollDistance','scrollDuration','scrollPagesToOpen','scrollReadTime','scrollAmount','scrollStayTime','visitTimeMs','internalLinkVisitTimeMs','mapsLoadWaitSec','searchResultWaitSec','websiteLoadWaitSec','typingDelayMs','stepRetryAttempts','stepRetryDelaySec','randomClickEnabled','randomClickBurstMin','randomClickBurstMax','randomClickIntervalMin','randomClickIntervalMax','randomClickInitialDelay','randomClickClickGapMin','randomClickClickGapMax','randomClickRevertNav','randomClickScroll','randomClickScrollAmount','randomClickScrollDir','randomClickMax','randomClickRefresh','randomClickRefreshMin','randomClickRefreshMax','trafficSourceEnabled','trafficSourceMode','trafficSourceSelect','trafficSourceCustomUrl','customResW','customResH','autoRotateThreads'];
+    const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','scrollMode','scrollDirection','scrollDistance','scrollDuration','scrollPagesToOpen','scrollReadTime','scrollAmount','scrollStayTime','visitTimeMs','internalLinkVisitTimeMs','mapsLoadWaitSec','searchResultWaitSec','websiteLoadWaitSec','typingDelayMs','stepRetryAttempts','stepRetryDelaySec','randomClickEnabled','randomClickBurstMin','randomClickBurstMax','randomClickIntervalMin','randomClickIntervalMax','randomClickInitialDelay','randomClickClickGapMin','randomClickClickGapMax','randomClickRevertNav','randomClickAdOnly','randomClickScroll','randomClickScrollAmount','randomClickScrollDir','randomClickMax','randomClickRefresh','randomClickRefreshMin','randomClickRefreshMax','trafficSourceEnabled','trafficSourceMode','trafficSourceSelect','trafficSourceCustomUrl','customResW','customResH','autoRotateThreads'];
     fields.forEach(id=>{const el=document.getElementById(id);if(el&&data[id]!==undefined)el.value=data[id];});
     if(data.currentResCategory==='mobile'||data.currentResCategory==='desktop')currentResCategory=data.currentResCategory;
     if(data.currentResolution&&parseInt(data.currentResolution.width,10)&&parseInt(data.currentResolution.height,10)){

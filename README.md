@@ -2,7 +2,7 @@
 
 Desktop traffic-automation app built with **Electron + Node.js + Playwright**.
 
-- Product name: **KG TRF Tool** (version **5.9.2**)
+- Product name: **KG TRF Tool** (version **5.9.3**)
 - Dashboard UI: plain HTML/CSS/JS (`index.html`, `i18n.js`)
 - Local REST backend: `server.js` on `http://127.0.0.1:3000`
 - Automation: Playwright 1.63 driving Chromium
@@ -12,6 +12,49 @@ Desktop traffic-automation app built with **Electron + Node.js + Playwright**.
 > Source-only repository. `node_modules`, the Electron runtime, the bundled
 > Chromium browser and the packaged `app.asar` are **not** committed. They are
 > installed or downloaded by the build steps below.
+
+## What's new in 5.9.3
+
+### Only click ads (recommended)
+
+**Random Clicks → Only click ads** stops clicking random page points and clicks
+only ad slots that a real visitor can actually see and use. It applies
+everywhere the click engine runs: **Direct / website URL, Organic, Referral,
+Google Maps and the RPA replay**.
+
+- Visible display iframes from the major networks (Adsterra, Monetag, PopAds,
+  PropellerAds, Google/GPT, MGID, Taboola, Outbrain, ...).
+- Native **SPONSORED** / **Advertisement** cards that wrap a real link.
+- `adsbygoogle` and `div-gpt-ad` units.
+
+Hidden, transparent, blank/unfilled, 1×1 tracking slots and ordinary page
+blocks are never clicked, and no click is ever sent to empty page space. An ad
+below the fold is scrolled into view first. Elements are addressed by a stable
+CSS path, so nothing is injected into the page — a site cannot detect the
+clicker by diffing its DOM.
+
+Each ad click is humanised: scroll into view, two-step mouse approach with a
+short hover, random press delay, ~10% natural skip and a 45-second per-slot
+memory. Afterwards the mouse moves away and the offer opens in a **background
+tab**, so the visited page stays in front. If a page shows no working ad, the
+clicker waits and sends no click at all (visible in the log as
+`Ad-only: no visible working ad`).
+
+The modal shows an `ADS` badge while the option is active, and the setting is
+saved with every other setting, so it survives close / reopen.
+
+### Dashboard polish
+
+Sidebar active states, cards, stat cards, mode list, buttons, focus rings and
+the action bar received a cleaner professional pass.
+
+### Verification
+
+- **`npm run test:ads` (new)** — 24 checks in a real Chromium: ad discovery
+  (iframe / sponsored card / adsbygoogle / below-the-fold), rejection of
+  hidden, transparent, blank and 1×1 slots, click destinations, background
+  tabs, ad-free pages and classic random clicking.
+- `npm run test:privacy` — 46 checks; `npm run smoke` — all pass.
 
 ## What's new in 5.9.2
 
@@ -72,6 +115,9 @@ RPA recordings are not lost after upgrading.
 npm run test:privacy          # Windows/macOS
 xvfb-run -a npm run test:privacy   # headless Linux
 
+npm run test:ads              # only-ads clicking, real Chromium
+xvfb-run -a npm run test:ads       # headless Linux
+
 npm run smoke                 # backend + browser + dashboard + settings
 ```
 
@@ -81,6 +127,14 @@ headers, then the Traffic Source referral interaction and the UA → emulation �
 adds static regressions that fail the build if Referer Control starts injecting
 `Referer` / `Referrer-Policy` again, or if a bare-domain referrer is rejected.
 Expected output: **46 passed, 0 failed** → `ALL CHECKS PASSED`.
+
+The ad test serves a fixture page with a working display ad, an `adsbygoogle`
+unit, a native sponsored card and an ad below the fold, next to a hidden ad, a
+1×1 tracker, a blank slot, a hero banner, plus hidden and transparent cards. It
+asserts that only the real ad slots are found and clicked, that every opened
+destination is an ad, that an ad-free page receives zero clicks, and that
+classic random clicking still works when the option is off. Expected output:
+**24 passed, 0 failed**.
 
 The smoke test additionally verifies that `/` serves the dashboard, `/i18n.js`
 is reachable, `/server.js` is **not** served, URL helpers work, and saved
@@ -99,8 +153,8 @@ resolution/auto-rotate values are restored by `loadFormData()`.
 
 ### Windows
 
-1. Download **`KG-TRF-Tool-Setup-5.9.2.exe`** (installer) or
-   **`KG-TRF-Tool-Portable-5.9.2.exe`** (no installation).
+1. Download **`KG-TRF-Tool-Setup-5.9.3.exe`** (installer) or
+   **`KG-TRF-Tool-Portable-5.9.3.exe`** (no installation).
 2. Run it. Because the build is not code-signed, SmartScreen may show
    "Windows protected your PC" → **More info → Run anyway**.
 3. The app opens directly. No Node.js, no Playwright download required.
@@ -111,14 +165,14 @@ every launch (15–30 seconds the first time).
 ### Linux (AppImage — recommended)
 
 ```bash
-chmod +x KG-TRF-Tool-5.9.2-x86_64.AppImage
-./KG-TRF-Tool-5.9.2-x86_64.AppImage
+chmod +x KG-TRF-Tool-5.9.3-x86_64.AppImage
+./KG-TRF-Tool-5.9.3-x86_64.AppImage
 ```
 
 - Ubuntu 22.04+ needs FUSE 2 for AppImage:
   `sudo apt install libfuse2`
 - If your desktop blocks AppImage, extract and run:
-  `./KG-TRF-Tool-5.9.2-x86_64.AppImage --appimage-extract` then
+  `./KG-TRF-Tool-5.9.3-x86_64.AppImage --appimage-extract` then
   `./squashfs-root/AppRun` (or `./squashfs-root/KG-TRF-Tool`)
 - The app starts with `--no-sandbox` on Linux only, because Ubuntu 24.04+
   restricts unprivileged user namespaces. This does not change campaign
@@ -127,7 +181,7 @@ chmod +x KG-TRF-Tool-5.9.2-x86_64.AppImage
 ### Linux (deb)
 
 ```bash
-sudo apt install ./KG-TRF-Tool-5.9.2-amd64.deb
+sudo apt install ./KG-TRF-Tool-5.9.3-amd64.deb
 kg-trf-tool
 ```
 
@@ -139,8 +193,8 @@ declared as dependencies.
 If AppImage/deb cannot be used, extract the portable archive and run it:
 
 ```bash
-tar -xzf KG-TRF-Tool-5.9.2-linux-x64-portable.tar.gz
-./KG-TRF-Tool-5.9.2-linux-x64/KG-TRF-Tool
+tar -xzf KG-TRF-Tool-5.9.3-linux-x64-portable.tar.gz
+./KG-TRF-Tool-5.9.3-linux-x64/KG-TRF-Tool
 ```
 
 It contains the same app and bundled Chromium; only the installer integration
@@ -163,7 +217,7 @@ watch the real browser through your browser tab.
 
    This installs Xvfb / x11vnc / noVNC / Chromium libraries (once per
    codespace), starts a 1600x900 virtual desktop, downloads and extracts the
-   `5.9.2` AppImage, and launches KG TRF Tool.
+   `5.9.3` AppImage, and launches KG TRF Tool.
 3. Open the **Ports** tab → port **3000**:
 
    ```
@@ -183,7 +237,7 @@ watch the real browser through your browser tab.
    `bash scripts/codespaces.sh` starts the app again instantly.
 
 The script also works on any headless Ubuntu/Debian machine (VPS, container).
-Set `TD_VERSION=5.9.2` to pick a different release.
+Set `TD_VERSION=5.9.3` to pick a different release.
 
 > Note: Codespace IPs are datacenter IPs. Some ad networks may label them
 > "Anonymous Proxy". For real ad fill, run the app on a normal residential
@@ -205,8 +259,8 @@ openbox &
 x11vnc -display :99 -nopw -forever -shared -rfbport 5900 &
 websockify --web /usr/share/novnc 6080 localhost:5900 &
 
-chmod +x KG-TRF-Tool-5.9.2-x86_64.AppImage
-./KG-TRF-Tool-5.9.2-x86_64.AppImage --appimage-extract
+chmod +x KG-TRF-Tool-5.9.3-x86_64.AppImage
+./KG-TRF-Tool-5.9.3-x86_64.AppImage --appimage-extract
 ./squashfs-root/AppRun --no-sandbox
 ```
 
@@ -215,8 +269,8 @@ unavailable in the container, always use the `--appimage-extract` route above,
 or the portable tar:
 
 ```bash
-tar -xzf KG-TRF-Tool-5.9.2-linux-x64-portable.tar.gz
-./KG-TRF-Tool-5.9.2-linux-x64/KG-TRF-Tool --no-sandbox
+tar -xzf KG-TRF-Tool-5.9.3-linux-x64-portable.tar.gz
+./KG-TRF-Tool-5.9.3-linux-x64/KG-TRF-Tool --no-sandbox
 ```
 
 Notes:
@@ -241,9 +295,10 @@ The Linux job runs a real smoke test first (`xvfb-run`) that starts the
 backend, launches the bundled Chromium, checks `/api/health`,
 `/api/browsers/detect`, the dashboard on port 3000 and settings persistence.
 Both jobs then run the full privacy + device audit (`npm run test:privacy`)
-before building, so a broken toggle fails the build instead of shipping.
+and the only-ads regression test (`npm run test:ads`) before building, so a
+broken toggle or a broken ad click fails the build instead of shipping.
 
-Pushing a tag (`git tag v5.9.2 && git push origin v5.9.2`) also publishes a
+Pushing a tag (`git tag v5.9.3 && git push origin v5.9.3`) also publishes a
 GitHub Release with all files attached.
 
 ## Build from source
@@ -340,13 +395,14 @@ credentials or recordings.
 | `SocialTraffic.js` | Referral / social traffic |
 | `Google map traffic.js` | Google Maps traffic |
 | `Automation controller.js`, `RpaRecorder.js` | RPA record/replay |
-| `RandomClicker.js` | Random clicks, background tabs |
+| `RandomClicker.js` | Random clicks / only-ads clicking, background tabs |
 | `ProxiedSession.js`, `EgressGuard.js`, `ProxyBrowserCheck.js` | Proxy + IP verification |
 | `PageGuard.js`, `PopupHandler.js` | Runtime guards |
 | `i18n.js` | English/Urdu strings |
 | `scripts/prepare-chromium.js` | Copies Chromium into `vendor/chromium` |
 | `scripts/smoke-test.js` | Backend + browser + dashboard + settings smoke test |
 | `scripts/privacy-test.js` | One-by-one privacy + device + ad-compat audit |
+| `scripts/adclick-test.js` | Only-ads discovery + click regression test |
 | `scripts/codespaces.sh` | One-command Codespaces / headless Linux runner |
 | `electron-builder.yml` | Installer configuration |
 
@@ -359,8 +415,8 @@ credentials or recordings.
    git push -u origin main
    ```
 3. GitHub → **Actions** → *Build installers* → **Run workflow**.
-4. Windows ke liye `KG-TRF-Tool-Setup-5.9.2.exe`, Linux ke liye
-   `KG-TRF-Tool-5.9.2-x86_64.AppImage` download karo.
+4. Windows ke liye `KG-TRF-Tool-Setup-5.9.3.exe`, Linux ke liye
+   `KG-TRF-Tool-5.9.3-x86_64.AppImage` download karo.
 5. Linux par: `chmod +x KG-TRF-Tool-*.AppImage` phir double-click / run.
 6. Source se chalana ho to: `npm install` → `npx playwright install chromium`
    → `npm start`.
