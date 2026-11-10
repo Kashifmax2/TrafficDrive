@@ -64,21 +64,42 @@ function proxyError(code, message, extra) {
   return err;
 }
 
-// Read the exit IP from inside the browser context. Returns '' when the read
-// failed (blocked endpoint / no network).
+// Read the exit IP from inside the browser context. Returns '' when every
+// endpoint failed (blocked endpoint / no network / slow tunnel).
+//
+// Ad-heavy targets often block one plain-text IP service but not another, and
+// a slow proxy can need more than one attempt. Trying a few well-known
+// endpoints (and retrying) avoids aborting a perfectly working proxy.
+const EGRESS_ENDPOINTS = [
+  'https://api.ipify.org?format=json',
+  'https://icanhazip.com/',
+  'https://ipinfo.io/ip',
+  'https://ifconfig.me/ip',
+];
+
+function parseEgressBody(text) {
+  const body = String(text || '').trim();
+  let ip = '';
+  try { ip = (JSON.parse(body) || {}).ip || ''; } catch (_) { ip = body; }
+  ip = String(ip).split(/\s+/)[0].trim();
+  return /^[0-9a-f:.]+$/i.test(ip) ? ip : '';
+}
+
 async function readEgressIp(context, timeoutMs = 8000) {
-  try {
-    const response = await context.request.get('https://api.ipify.org?format=json', {
-      timeout: timeoutMs,
-      headers: { Accept: 'application/json' },
-    });
-    const text = (await response.text()).trim();
-    let ip = '';
-    try { ip = (JSON.parse(text) || {}).ip || ''; } catch (_) { ip = text; }
-    return /^[0-9a-f:.]+$/i.test(ip) ? ip.trim() : '';
-  } catch (_) {
-    return '';
+  for (let round = 0; round < 2; round++) {
+    for (const url of EGRESS_ENDPOINTS) {
+      try {
+        const response = await context.request.get(url, {
+          timeout: timeoutMs,
+          headers: { Accept: 'application/json, text/plain, */*' },
+        });
+        if (!response || response.status() >= 400) continue;
+        const ip = parseEgressBody(await response.text());
+        if (ip) return ip;
+      } catch (_) {}
+    }
   }
+  return '';
 }
 
 /**
@@ -185,10 +206,19 @@ async function createProxiedSession(opts = {}) {
     if (hasProxy && shouldVerify) {
       egressIp = await readEgressIp(context);
       if (!egressIp) {
-        throw proxyError(
-          'PROXY_EGRESS_UNVERIFIED',
-          'Proxy egress could not be verified (the exit-IP check failed). Replay aborted instead of using the PC IP.'
-        );
+        if (geo && geo.ip) {
+          // The proxy already answered an unproxied HTTP request during the
+          // geo lookup, which proves traffic really exits through it. Some ad
+          // targets block the plain-text IP probes, so falling back to that
+          // proof keeps a working proxy from being rejected as "unverified".
+          egressIp = geo.ip;
+          onLog(`[${sessionId}] Exit-IP probe was blocked by the target; using the verified proxy exit ${egressIp} from the preflight lookup.`, 'warn');
+        } else {
+          throw proxyError(
+            'PROXY_EGRESS_UNVERIFIED',
+            'Proxy egress could not be verified (the exit-IP check failed). Replay aborted instead of using the PC IP.'
+          );
+        }
       }
       const localIp = await getLocalIp();
       if (localIp && egressIp === localIp) {

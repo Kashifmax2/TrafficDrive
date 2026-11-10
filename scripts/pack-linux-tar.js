@@ -5,8 +5,8 @@
 // extraction. This post-step writes a proper ustar archive so the result can
 // be extracted and run directly:
 //
-//   tar -xzf TrafficDrive-5.9.1-linux-x64-portable.tar.gz
-//   ./TrafficDrive-5.9.1-linux-x64/TrafficDrive
+//   tar -xzf KG-TRF-Tool-5.9.2-linux-x64-portable.tar.gz
+//   ./KG-TRF-Tool-5.9.2-linux-x64/KG-TRF-Tool
 //
 // Linux AppImage / deb releases should still be built on Linux (GitHub
 // Actions) where executable bits and symlinks are preserved natively.
@@ -20,11 +20,11 @@ const zlib = require('zlib');
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'dist', 'linux-unpacked');
 const VERSION = require(path.join(ROOT, 'package.json')).version;
-const TOP = `TrafficDrive-${VERSION}-linux-x64`;
+const TOP = `KG-TRF-Tool-${VERSION}-linux-x64`;
 const OUT = path.join(ROOT, 'dist', `${TOP}-portable.tar.gz`);
 
 const EXEC_FILES = new Set([
-  'TrafficDrive',
+  'KG-TRF-Tool',
   'chrome-sandbox',
   'chrome_crashpad_handler',
   'resources/chromium/chrome-linux64/chrome',

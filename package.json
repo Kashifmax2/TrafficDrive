@@ -1,10 +1,11 @@
 {
-  "name": "trafficdrive",
-  "version": "5.9.1",
-  "description": "TrafficDrive - Desktop Traffic Automation Application",
+  "name": "kg-trf-tool",
+  "version": "5.9.2",
+  "productName": "KG TRF Tool",
+  "description": "KG TRF Tool - Desktop Traffic Automation Application",
   "main": "main.js",
-  "desktopName": "trafficdrive.desktop",
-  "author": { "name": "TrafficDrive", "email": "support@trafficdrive.app" },
+  "desktopName": "kg-trf-tool.desktop",
+  "author": { "name": "KG TRF Tool", "email": "support@trafficdrive.app" },
   "license": "MIT",
   "scripts": {
     "start": "electron .",

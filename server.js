@@ -1,5 +1,5 @@
 // server.js
-// NGF NOMI TOOLS backend server — wires the 4 traffic modules to the dashboard's
+// KG TRF Tool backend server — wires the 4 traffic modules to the dashboard's
 // REST API on http://localhost:3000.
 //
 // Endpoints (all match what index.html calls):
@@ -86,7 +86,7 @@ function loadProxiesFromDisk() {
     const list = Array.isArray(data) ? data : data.proxies;
     if (Array.isArray(list)) loadedProxies = list;
   } catch (e) {
-    console.error('[NGF NOMI TOOLS] Could not load saved proxies:', e.message);
+    console.error('[KG TRF Tool] Could not load saved proxies:', e.message);
   }
 }
 
@@ -95,7 +95,7 @@ function saveProxiesToDisk() {
     fs.mkdirSync(path.dirname(PROXY_STORE_FILE), { recursive: true });
     fs.writeFileSync(PROXY_STORE_FILE, JSON.stringify({ proxies: loadedProxies }, null, 2), 'utf8');
   } catch (e) {
-    console.error('[NGF NOMI TOOLS] Could not save proxies:', e.message);
+    console.error('[KG TRF Tool] Could not save proxies:', e.message);
   }
 }
 
@@ -155,10 +155,10 @@ let autoRestartEnabled = false;
 
 // Prevent unhandled rejections/exceptions from crashing the server
 process.on('unhandledRejection', (reason) => {
-  console.error('[NGF NOMI TOOLS] Unhandled rejection:', reason);
+  console.error('[KG TRF Tool] Unhandled rejection:', reason);
 });
 process.on('uncaughtException', (err) => {
-  console.error('[NGF NOMI TOOLS] Uncaught exception:', err.message);
+  console.error('[KG TRF Tool] Uncaught exception:', err.message);
 });
 
 // RPA state — holds the recording browser/context/page and actions.
@@ -830,7 +830,7 @@ async function rpaPlaySessionWorker(actions, opts, sessionId) {
     }
 
     const maxProxyAttempts = mode === 'random'
-      ? Math.min(Math.max(1, opts.proxyPool.length), 4)
+      ? Math.min(Math.max(1, opts.proxyPool.length), 10)
       : 1;
     let completedThisRound = false;
 
@@ -974,8 +974,8 @@ async function rpaPlayLoop(actions, opts) {
       opts.verifiedPool = [];
       rpaPushLog(
         rpaPlayState,
-        'WARNING: replay is running on the PC direct IP because no proxy is selected. Ad networks can see this IP; select a proxy or Random proxy for real traffic.',
-        'warn'
+        'Network: direct IP (same as a normal browser). Ads and sites behave normally; use a residential proxy only when you need a different country exit.',
+        'info'
       );
     } else {
       const rawPool = Array.isArray(opts.proxyPool) && opts.proxyPool.length
@@ -1006,29 +1006,34 @@ async function rpaPlayLoop(actions, opts) {
           rpaPushLog(rpaPlayState, `Proxy ${proxiedLabel(bad.proxy)} rejected: ${bad.reason}`, 'warn');
         }
         if (!okList.length) {
-          rpaPlayState.lastError = `No proxy passed the real-target check (${rpaPlayState.proxyTarget}).`;
+          // Do not abort the whole run when a preflight is unavailable: some ad
+          // targets block the probe itself. Continue with the raw pool; each
+          // session still verifies its own egress and rotates on failure.
+          opts.proxyPool = rawPool;
+          opts.verifiedPool = rawPool;
+          rpaPlayState.proxyVerifiedPoolSize = 0;
+          rpaPlayState.lastError = 'Preflight could not confirm any proxy; continuing with per-session egress checks.';
           rpaPushLog(
             rpaPlayState,
-            `Replay aborted: ${rpaPlayState.lastError} The ad target blocked or could not be opened through every checked proxy. Open Proxies → Validate with this target URL (Browser mode), then try again.`,
-            'error'
+            `Preflight warning: no proxy passed the real-target check (${rpaPlayState.proxyTarget}). Continuing with ${rawPool.length} proxy candidate(s); each replay verifies its own exit IP and switches proxy on failure.`,
+            'warn'
           );
-          return;
+        } else {
+          if (mode === 'fixed' && !pre.checked[0].ok) {
+            rpaPlayState.lastError = `Selected proxy failed the real-target check (${pre.checked[0].reason}).`;
+            rpaPushLog(rpaPlayState, `Preflight warning: ${rpaPlayState.lastError} Trying it anyway; the session will switch/stop if it really fails.`, 'warn');
+          }
+          // Fixed mode keeps exactly its proxy. Random mode uses only verified
+          // proxies and rotates between them.
+          opts.proxyPool = mode === 'fixed' ? [rawPool[0]] : okList;
+          opts.verifiedPool = opts.proxyPool;
+          rpaPlayState.proxyLabel = proxiedLabel(opts.proxyPool[0]);
+          rpaPushLog(
+            rpaPlayState,
+            `Preflight complete: ${okList.length}/${pre.checked.length} proxies accepted by the target${pre.skipped ? ` (${pre.skipped} not checked)` : ''}.`,
+            'success'
+          );
         }
-        if (mode === 'fixed' && !pre.checked[0].ok) {
-          rpaPlayState.lastError = `Selected proxy failed the real-target check (${pre.checked[0].reason}).`;
-          rpaPushLog(rpaPlayState, `Replay aborted: ${rpaPlayState.lastError}`, 'error');
-          return;
-        }
-        // Fixed mode keeps exactly its proxy. Random mode uses only verified
-        // proxies and rotates between them.
-        opts.proxyPool = mode === 'fixed' ? [rawPool[0]] : okList;
-        opts.verifiedPool = opts.proxyPool;
-        rpaPlayState.proxyLabel = proxiedLabel(opts.proxyPool[0]);
-        rpaPushLog(
-          rpaPlayState,
-          `Preflight complete: ${okList.length}/${pre.checked.length} proxies accepted by the target${pre.skipped ? ` (${pre.skipped} not checked)` : ''}.`,
-          'success'
-        );
       } else {
         opts.proxyPool = rawPool;
         opts.verifiedPool = rawPool;
@@ -1801,6 +1806,51 @@ function sendJSON(res, statusCode, data) {
     'Access-Control-Allow-Headers': 'Content-Type',
   });
   res.end(body);
+}
+
+// Dashboard asset allowlist. Everything else (server.js, package.json,
+// proxies.json, RPA recordings, .env, ...) is never served over HTTP.
+const DASHBOARD_ASSETS = new Map([
+  ['/', 'index.html'],
+  ['/index.html', 'index.html'],
+  ['/i18n.js', 'i18n.js'],
+  ['/browser-logos.js', 'browser-logos.js'],
+  ['/Automation controller.js', 'Automation controller.js'],
+  ['/Scrollscrollingsystem .js', 'Scrollscrollingsystem .js'],
+  ['/logo.png', 'logo.png'],
+]);
+
+const STATIC_MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.png': 'image/png',
+  '.css': 'text/css; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+};
+
+function serveDashboardAsset(pathname, req, res) {
+  let name = '';
+  try { name = decodeURIComponent(pathname || ''); } catch (_) { name = ''; }
+  if (!name) name = '/';
+  const file = DASHBOARD_ASSETS.get(name);
+  if (!file) return false;
+  const full = path.join(__dirname, file);
+  try {
+    const data = fs.readFileSync(full);
+    const ext = path.extname(full).toLowerCase();
+    res.writeHead(200, {
+      'Content-Type': STATIC_MIME[ext] || 'application/octet-stream',
+      'Content-Length': data.length,
+      'Cache-Control': 'no-cache',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    if (req.method === 'HEAD') res.end();
+    else res.end(data);
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 function readBody(req) {
@@ -3063,6 +3113,15 @@ async function handleRequest(req, res) {
     return;
   }
 
+  // --- Dashboard (same-origin static files) ---------------------------------
+  // Serving the UI on the API port makes Codespaces / remote Linux use trivial:
+  // open port 3000 and the whole app works over http:// instead of file://.
+  // Only the dashboard asset allowlist is exposed; server.js / proxies.json and
+  // every other backend file stay private.
+  if ((method === 'GET' || method === 'HEAD') && serveDashboardAsset(pathname, req, res)) {
+    return;
+  }
+
   // --- 404 ---
   sendJSON(res, 404, { success: false, error: `Unknown endpoint: ${method} ${pathname}` });
 }
@@ -3091,6 +3150,13 @@ function findCachedChromiumSafe() {
 
 const PORT = parseInt(process.env.TRAFFICDRIVE_PORT || process.env.PORT || '3000', 10);
 
+// Bind to loopback by default (a local desktop tool should not be reachable
+// from the LAN). Inside GitHub Codespaces the port forwarder needs a socket
+// that is reachable from outside the container, so there we listen on all
+// interfaces. TRAFFICDRIVE_HOST overrides both.
+const HOST = process.env.TRAFFICDRIVE_HOST
+  || (process.env.CODESPACES === 'true' ? '0.0.0.0' : '127.0.0.1');
+
 let serverInstance = null;
 
 function createServer() {
@@ -3110,16 +3176,16 @@ function startServer() {
   return new Promise((resolve, reject) => {
     const server = createServer();
     
-    server.listen(PORT, '127.0.0.1', () => {
-      console.log(`[NGF NOMI TOOLS] Backend server running on http://localhost:${PORT}`);
+    server.listen(PORT, HOST, () => {
+      console.log(`[KG TRF Tool] Backend + dashboard running on http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
       resolve(server);
     });
 
     server.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
-        console.error(`[NGF NOMI TOOLS] Port ${PORT} is already in use. Is another instance running?`);
+        console.error(`[KG TRF Tool] Port ${PORT} is already in use. Is another instance running?`);
       } else {
-        console.error('[NGF NOMI TOOLS] Server error:', err);
+        console.error('[KG TRF Tool] Server error:', err);
       }
       reject(err);
     });

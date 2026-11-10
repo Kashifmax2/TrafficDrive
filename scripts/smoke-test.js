@@ -67,6 +67,64 @@ async function main() {
     const chromium = detected.json.browsers.find(b => b.id === 'chromium' && b.path);
     if (!chromium) throw new Error('Chromium was not detected by the API');
     console.log('[smoke] /api/browsers/detect: OK ->', chromium.path);
+
+    // ── dashboard served by the backend (Codespaces / remote Linux) ────
+    const dash = await get('/');
+    if (dash.status !== 200 || !/KG TRF Tool/.test(dash.raw || '')) {
+      throw new Error('Dashboard / did not serve index.html: ' + dash.status);
+    }
+    const asset = await get('/i18n.js');
+    if (asset.status !== 200 || !/function/.test(asset.raw || '')) {
+      throw new Error('Dashboard asset /i18n.js failed: ' + asset.status);
+    }
+    const blocked = await get('/server.js');
+    if (blocked.status !== 404) {
+      throw new Error('Backend source must not be served: /server.js -> ' + blocked.status);
+    }
+    console.log('[smoke] dashboard (/, i18n.js, server.js blocked): OK');
+
+    // ── dashboard helpers + settings persistence in a real page ────────
+    const dashBrowser = await launchBrowser({ headless: true, sessionId: 'smoke-dashboard' });
+    try {
+      const page = await dashBrowser.newPage();
+      await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      const helpers = await page.evaluate(() => ({
+        url: typeof normalizeUrlInput === 'function' ? normalizeUrlInput('example.com') : '',
+        ref: typeof normalizeReferrerUrl === 'function' ? normalizeReferrerUrl('facebook.com') : '',
+        toast: typeof showToast === 'function',
+      }));
+      if (helpers.url !== 'https://example.com/' || helpers.ref !== 'https://facebook.com/' || !helpers.toast) {
+        throw new Error('Dashboard helpers missing: ' + JSON.stringify(helpers));
+      }
+      const persisted = await page.evaluate(() => {
+        currentResCategory = 'mobile';
+        currentResolution = { width: 1366, height: 768 };
+        autoRotateEnabled = true;
+        document.getElementById('customResW').value = '1366';
+        document.getElementById('customResH').value = '768';
+        saveFormData();
+        // Simulate a fresh launch: defaults first, then loadFormData().
+        currentResolution = { width: 1400, height: 900 };
+        autoRotateEnabled = false;
+        currentResCategory = 'desktop';
+        loadFormData();
+        return {
+          w: currentResolution.width,
+          h: currentResolution.height,
+          rotate: autoRotateEnabled,
+          category: currentResCategory,
+          uiW: document.getElementById('res-current-w').textContent,
+          toggleOn: document.getElementById('autoRotateToggle').classList.contains('on'),
+        };
+      });
+      if (persisted.w !== 1366 || persisted.h !== 768 || persisted.rotate !== true
+          || persisted.category !== 'mobile' || persisted.uiW !== '1366' || persisted.toggleOn !== true) {
+        throw new Error('Settings were not restored: ' + JSON.stringify(persisted));
+      }
+      console.log('[smoke] dashboard helpers + settings persistence: OK');
+    } finally {
+      await dashBrowser.close().catch(() => {});
+    }
   } finally {
     await new Promise((resolve) => instance.close(resolve));
   }

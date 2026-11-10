@@ -64,9 +64,18 @@ function isDocumentNavigation(url) {
   return true;
 }
 
-function isValidReferrer(url) {
+// Accept what users actually paste in the dashboard:
+//   facebook.com            -> https://facebook.com/
+//   www.facebook.com/feed   -> https://www.facebook.com/
+//   https://site.com        -> https://site.com/
+// A missing scheme is no longer rejected silently (that made the Start button
+// look broken because the toggle stayed OFF).
+function normalizeReferrer(url) {
   if (typeof url !== 'string') return '';
-  const clean = url.trim();
+  let clean = url.trim();
+  if (!clean) return '';
+  if (clean.startsWith('//')) clean = 'https:' + clean;
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(clean)) clean = 'https://' + clean;
   if (!/^https?:\/\/[^\s]+$/i.test(clean)) return '';
   try {
     const u = new URL(clean);
@@ -75,6 +84,10 @@ function isValidReferrer(url) {
   } catch (_) {
     return '';
   }
+}
+
+function isValidReferrer(url) {
+  return normalizeReferrer(url);
 }
 
 /**
@@ -93,7 +106,7 @@ function normalizeTrafficSource(raw) {
     enabled: true,
     mode,
     source,
-    customUrl: typeof raw.customUrl === 'string' ? raw.customUrl.trim() : '',
+    customUrl: source === 'custom' ? isValidReferrer(raw.customUrl) : '',
   };
 }
 
@@ -172,5 +185,6 @@ module.exports = {
   resolveTrafficReferrer,
   installTrafficSource,
   isValidReferrer,
+  normalizeReferrer,
   isDocumentNavigation,
 };

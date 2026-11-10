@@ -1,15 +1,15 @@
 {
-  "name": "TrafficDrive",
+  "name": "KG TRF Tool",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
-  "forwardPorts": [6080, 3000, 5900],
+  "forwardPorts": [3000, 6080, 5900],
   "portsAttributes": {
-    "6080": {
-      "label": "TrafficDrive desktop (noVNC)",
+    "3000": {
+      "label": "KG TRF Tool dashboard (open this)",
       "onAutoForward": "notify"
     },
-    "3000": {
-      "label": "TrafficDrive dashboard",
-      "onAutoForward": "silent"
+    "6080": {
+      "label": "KG TRF Tool desktop (noVNC)",
+      "onAutoForward": "notify"
     },
     "5900": {
       "label": "VNC (optional)",

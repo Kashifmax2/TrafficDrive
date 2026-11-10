@@ -9,19 +9,19 @@
 #   1. installs the runtime libraries (Xvfb, x11vnc, noVNC, Chromium deps)
 #   2. starts a virtual display (:99) plus a window manager
 #   3. starts the noVNC web viewer on port 6080 (forward it to your browser)
-#   4. downloads + extracts the TrafficDrive AppImage and launches the app
+#   4. downloads + extracts the KG TRF Tool AppImage and launches the app
 #
 # Stop with Ctrl+C; the display keeps running so a restart is instant.
 
 set -euo pipefail
 
-VERSION="${TD_VERSION:-5.9.1}"
+VERSION="${TD_VERSION:-5.9.2}"
 DISPLAY_NUM="${TD_DISPLAY:-:99}"
 VNC_PORT=5900
 WEB_PORT=6080
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APPIMAGE="$REPO_DIR/TrafficDrive-${VERSION}-x86_64.AppImage"
-APP_BIN="$REPO_DIR/squashfs-root/TrafficDrive"
+APPIMAGE="$REPO_DIR/KG-TRF-Tool-${VERSION}-x86_64.AppImage"
+APP_BIN="$REPO_DIR/squashfs-root/KG-TRF-Tool"
 
 say() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 
@@ -75,25 +75,31 @@ fi
 
 if [ ! -x "$APP_BIN" ]; then
   if [ ! -f "$APPIMAGE" ]; then
-    say "Downloading TrafficDrive ${VERSION} AppImage (~300 MB)"
+    say "Downloading KG TRF Tool ${VERSION} AppImage (~300 MB)"
     curl -L --fail --retry 3 -o "$APPIMAGE" \
-      "https://github.com/Kashifmax2/TrafficDrive/releases/download/v${VERSION}/TrafficDrive-${VERSION}-x86_64.AppImage"
+      "https://github.com/Kashifmax2/TrafficDrive/releases/download/v${VERSION}/KG-TRF-Tool-${VERSION}-x86_64.AppImage"
   fi
   chmod +x "$APPIMAGE"
   say "Extracting AppImage (more reliable than FUSE inside a container)"
   (cd "$REPO_DIR" && "$APPIMAGE" --appimage-extract >/dev/null)
 fi
 
-say "TrafficDrive is starting"
+# electron-builder's AppImage ships an AppRun launcher; use it when present so
+# the executable name can change without breaking this script.
+if [ -x "$REPO_DIR/squashfs-root/AppRun" ]; then
+  APP_BIN="$REPO_DIR/squashfs-root/AppRun"
+fi
+
+say "KG TRF Tool is starting"
 cat <<EOF
 
-  Open the forwarded port ${WEB_PORT} and add /vnc.html:
+  Full dashboard (recommended, works in any browser):
+      open forwarded port 3000  ->  https://<your-codespace>-3000.app.github.dev
+
+  Virtual desktop (noVNC) — campaigns open their browser windows here:
+      open forwarded port ${WEB_PORT} and add /vnc.html
       https://<your-codespace>-${WEB_PORT}.app.github.dev/vnc.html
 
-  Dashboard (forward port 3000 if you want it in your own browser):
-      http://127.0.0.1:3000
-
-  Campaigns open their browser windows inside this virtual desktop.
   Press Ctrl+C to stop the app (the desktop and viewer keep running).
 
 EOF
@@ -103,7 +109,8 @@ EOF
 # (drag / Alt+drag / double-click to maximize) and this helper centres it.
 fit_window() {
   for _ in $(seq 1 40); do
-    wid=$(xdotool search --name 'TrafficDrive' 2>/dev/null | head -1 || true)
+    wid=$(xdotool search --name 'KG TRF Tool' 2>/dev/null | head -1 || true)
+    [ -n "${wid:-}" ] || wid=$(xdotool search --name 'TrafficDrive' 2>/dev/null | head -1 || true)
     if [ -n "${wid:-}" ]; then
       xdotool windowsize "$wid" 1500 840 2>/dev/null || true
       xdotool windowmove "$wid" 30 30 2>/dev/null || true

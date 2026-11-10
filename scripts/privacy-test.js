@@ -21,9 +21,14 @@ const { launchBrowser } = require(path.join(ROOT, 'browser-launcher.js'));
 const {
   installPrivacyGuard,
   privacyContextOptions,
+  privacyRequestHeaders,
   PRIVACY_FEATURE_IDS,
 } = require(path.join(ROOT, 'PrivacyGuard.js'));
-const { installTrafficSource } = require(path.join(ROOT, 'TrafficSource.js'));
+const {
+  installTrafficSource,
+  normalizeReferrer,
+  normalizeTrafficSource,
+} = require(path.join(ROOT, 'TrafficSource.js'));
 const {
   resolveSessionDevice,
   chooseViewport,
@@ -330,6 +335,41 @@ async function main() {
   let failures = 0;
   let passes = 0;
   const notes = [];
+
+  // ── static regressions (no browser needed) ─────────────────────────────
+  // 5.9.2: Referer Control must not inject a custom `Referer` or
+  // `Referrer-Policy` request header. Chromium applies those as custom headers
+  // to every subresource, so cross-origin ad scripts (Monetag / Adsterra) fail
+  // their CORS check with net::ERR_FAILED and no ad renders.
+  console.log('\n[privacy] Static regressions (ad compatibility) ...');
+  {
+    const rcHeaders = privacyRequestHeaders(['referer-control']);
+    const rcOk = !Object.prototype.hasOwnProperty.call(rcHeaders, 'Referer')
+      && !Object.prototype.hasOwnProperty.call(rcHeaders, 'Referrer-Policy');
+    if (rcOk) { passes++; console.log('  [PASS] referer-control leaves Referer/Referrer-Policy untouched'); }
+    else { failures++; console.log(`  [FAIL] referer-control headers: ${JSON.stringify(rcHeaders)}`); }
+
+    const trafficHeaders = privacyRequestHeaders(['referer-control'], { trafficReferrer: 'https://www.google.com/' });
+    const trafficOk = trafficHeaders.Referer === 'https://www.google.com/'
+      && !Object.prototype.hasOwnProperty.call(trafficHeaders, 'Referrer-Policy');
+    if (trafficOk) { passes++; console.log('  [PASS] Traffic Source Referer still applied'); }
+    else { failures++; console.log(`  [FAIL] traffic headers: ${JSON.stringify(trafficHeaders)}`); }
+
+    const bare = normalizeReferrer('facebook.com');
+    const withWww = normalizeReferrer('www.facebook.com/feed');
+    if (bare === 'https://facebook.com/' && withWww === 'https://www.facebook.com/') {
+      passes++; console.log('  [PASS] bare-domain referrer normalized');
+    } else {
+      failures++; console.log(`  [FAIL] normalizeReferrer: ${bare} / ${withWww}`);
+    }
+
+    const normalizedSource = normalizeTrafficSource({ enabled: true, mode: 'fixed', source: 'custom', customUrl: 'facebook.com' });
+    if (normalizedSource && normalizedSource.customUrl === 'https://facebook.com/') {
+      passes++; console.log('  [PASS] Traffic Source custom URL normalized');
+    } else {
+      failures++; console.log(`  [FAIL] normalizeTrafficSource: ${JSON.stringify(normalizedSource)}`);
+    }
+  }
 
   try {
     console.log('\n[privacy] Baseline (no toggles) ...');

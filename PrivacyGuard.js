@@ -82,12 +82,13 @@ function privacyRequestHeaders(features, opts = {}) {
     // context drops it again after the landing document (see installPrivacyGuard)
     // so later in-page clicks are not rejected by Chromium.
     headers['Referer'] = opts.trafficReferrer;
-  } else if (set.has('referer-control')) {
-    // Blank the referrer on every request; the init script also inserts
-    // <meta name="referrer" content="no-referrer"> and hides document.referrer.
-    headers['Referer'] = '';
-    headers['Referrer-Policy'] = 'no-referrer';
   }
+  // Referer Control deliberately does NOT add `Referer: ''` or a
+  // `Referrer-Policy` request header here. Chromium treats those as custom
+  // headers on every subresource; cross-origin ad scripts (Monetag/Adsterra)
+  // then fail their CORS check with net::ERR_FAILED, so no ads render.
+  // The in-page <meta name="referrer" content="no-referrer"> inserted by
+  // applyRefererControl() gives the same privacy without touching ads.
   return headers;
 }
 
@@ -187,14 +188,17 @@ async function installPrivacyGuard(target, opts = {}) {
     // when a feature needs them, so an active Traffic Source referrer is not
     // wiped by an unrelated toggle.
     const headers = privacyRequestHeaders(features, { trafficReferrer: opts.trafficReferrer });
-    if (Object.keys(headers).length) {
+    // Always apply the map when there is something to apply OR when a traffic
+    // referrer was requested: setExtraHTTPHeaders replaces the whole map, which
+    // is how the landing Referer is removed again below.
+    if (Object.keys(headers).length || opts.trafficReferrer) {
       try {
         await target.setExtraHTTPHeaders(headers);
       } catch (err) {
         onLog(`[PrivacyGuard] Could not set privacy headers: ${(err && err.message) || err}`, 'WARN');
       }
       if (set.has('referer-control') && opts.trafficReferrer) {
-        onLog('[PrivacyGuard] Referer Control kept the Traffic Source referrer (both are enabled).', 'WARN');
+        onLog('[PrivacyGuard] Traffic Source referrer kept; Referer Control is handled in-page only.', 'INFO');
       }
     }
 
@@ -210,6 +214,8 @@ async function installPrivacyGuard(target, opts = {}) {
         cleared = true;
         const finalHeaders = privacyRequestHeaders(features, { trafficReferrer: '' });
         try {
+          // Must run even when finalHeaders is {} - setExtraHTTPHeaders({})
+          // replaces the map and removes the spoofed landing Referer.
           const p = target.setExtraHTTPHeaders(finalHeaders);
           if (p && typeof p.catch === 'function') p.catch(() => {});
         } catch (_) {}
@@ -818,10 +824,13 @@ function privacyInitScript(payload) {
   }
 
   function applyRefererControl() {
-    // Chromium re-adds the Referer header after request interception, so the
-    // only reliable switch is a document-wide no-referrer policy. Insert the
-    // meta tag as soon as the parser creates <head>. The context also sets an
-    // empty Referer extra header (see privacyRequestHeaders) for subresources.
+    // Ads must keep working, so Referer Control is implemented purely in the
+    // page: a document-wide no-referrer policy. Chromium re-adds the Referer
+    // header after request interception, and a context-wide `Referer: ''` /
+    // `Referrer-Policy` extra header breaks cross-origin ad requests with
+    // net::ERR_FAILED (verified against Monetag/Adsterra). The meta tag hides
+    // the referrer for normal navigations and subresources without that CORS
+    // side effect.
     try {
       const make = () => {
         const m = document.createElement('meta');
@@ -847,18 +856,6 @@ function privacyInitScript(payload) {
     // Hide the referrer from JS fingerprinting too.
     try {
       Object.defineProperty(Document.prototype, 'referrer', { configurable: true, get: () => '' });
-    } catch (_) {}
-    // fetch() with an invalid referrer value would throw; use the policy field.
-    try {
-      const origFetch = window.fetch;
-      if (origFetch) {
-        window.fetch = function (input, init) {
-          const o = init && typeof init === 'object' ? Object.assign({}, init) : {};
-          delete o.referrer;
-          try { o.referrerPolicy = 'no-referrer'; } catch (_) {}
-          return origFetch.call(this, input, o);
-        };
-      }
     } catch (_) {}
   }
 

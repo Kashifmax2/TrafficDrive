@@ -1,7 +1,7 @@
-appId: com.trafficdrive.desktop
-productName: TrafficDrive
-executableName: TrafficDrive
-copyright: Copyright © 2026 TrafficDrive
+appId: com.kgtrf.tool
+productName: KG TRF Tool
+executableName: KG-TRF-Tool
+copyright: Copyright © 2026 KG TRF Tool
 
 directories:
   output: dist
@@ -38,7 +38,7 @@ win:
       arch:
         - x64
   icon: build-res/icon.ico
-  artifactName: TrafficDrive-${version}-${arch}.${ext}
+  artifactName: KG-TRF-Tool-${version}-${arch}.${ext}
 
 nsis:
   oneClick: false
@@ -46,18 +46,18 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: TrafficDrive
+  shortcutName: KG TRF Tool
   deleteAppDataOnUninstall: false
   runAfterFinish: true
-  artifactName: TrafficDrive-Setup-${version}.${ext}
+  artifactName: KG-TRF-Tool-Setup-${version}.${ext}
 
 portable:
-  artifactName: TrafficDrive-Portable-${version}.${ext}
+  artifactName: KG-TRF-Tool-Portable-${version}.${ext}
 
 linux:
   # .deb packages must declare a maintainer (electron-builder reads the
   # package.json author first; this is the explicit fallback/override).
-  maintainer: TrafficDrive <support@trafficdrive.app>
+  maintainer: KG TRF Tool <support@trafficdrive.app>
   target:
     - target: AppImage
       arch:
@@ -68,15 +68,15 @@ linux:
   icon: build-res/icons
   category: Network
   synopsis: Desktop traffic automation
-  description: TrafficDrive desktop traffic automation (Electron + Playwright).
+  description: KG TRF Tool desktop traffic automation (Electron + Playwright).
   syncDesktopName: true
-  artifactName: TrafficDrive-${version}-${arch}.${ext}
+  artifactName: KG-TRF-Tool-${version}-${arch}.${ext}
 
 appImage:
-  artifactName: TrafficDrive-${version}-${arch}.${ext}
+  artifactName: KG-TRF-Tool-${version}-${arch}.${ext}
 
 deb:
-  artifactName: TrafficDrive-${version}-${arch}.${ext}
+  artifactName: KG-TRF-Tool-${version}-${arch}.${ext}
   depends:
     - libgtk-3-0
     - libnotify4

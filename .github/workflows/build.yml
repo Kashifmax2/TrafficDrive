@@ -35,7 +35,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: TrafficDrive-windows
+          name: KG-TRF-Tool-windows
           path: |
             dist/*.exe
           if-no-files-found: error
@@ -71,7 +71,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: TrafficDrive-linux
+          name: KG-TRF-Tool-linux
           path: |
             dist/*.AppImage
             dist/*.deb
@@ -93,7 +93,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/TrafficDrive-windows/*.exe
-            artifacts/TrafficDrive-linux/*.AppImage
-            artifacts/TrafficDrive-linux/*.deb
+            artifacts/KG-TRF-Tool-windows/*.exe
+            artifacts/KG-TRF-Tool-linux/*.AppImage
+            artifacts/KG-TRF-Tool-linux/*.deb
           generate_release_notes: true

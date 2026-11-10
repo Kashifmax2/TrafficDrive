@@ -3,7 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NGF NOMI TOOLS - TrafficDrive v3.0.4 (FREE SOFTWARE)</title>
+<title>KG TRF Tool 5.9.2</title>
+<script>
+/* API base shim ------------------------------------------------------------
+   The Electron app opens index.html over file:// and talks to the loopback
+   backend, so every historical fetch() used an absolute http://localhost:3000
+   URL. When the same dashboard is served by the backend (port 3000 in a
+   Codespace / Linux box) those absolute URLs would be cross-origin. This shim
+   is installed before any app script loads and keeps both cases working
+   without rewriting dozens of call sites: file:// keeps localhost, http(s)
+   uses the page origin. */
+(function () {
+  try {
+    if (typeof window.fetch !== 'function') return;
+    if (location.protocol === 'file:') return;
+    var nativeFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      try {
+        if (typeof input === 'string') {
+          var m = input.match(/^https?:\/\/localhost:3000(?=\/|$)/i);
+          if (m) input = location.origin + input.slice(m[0].length);
+        } else if (input && input.url) {
+          var u = String(input.url);
+          var mm = u.match(/^https?:\/\/localhost:3000(?=\/|$)/i);
+          if (mm) input = new Request(location.origin + u.slice(mm[0].length), input);
+        }
+      } catch (_) {}
+      return nativeFetch(input, init);
+    };
+  } catch (_) {}
+})();
+</script>
 <link rel="icon" type="image/png" href="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -49,7 +79,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);display:flex;h
 <button class="sb-toggle" onclick="toggleSb()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
 <div class="sb-overlay" onclick="toggleSb()"></div>
 <aside class="sb">
-  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="NGF NOMI TOOLS" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">NGF NOMI TOOLS</div><div class="sb-ver">v3.0.4 (FREE)</div></div></div>
+  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.2</div></div></div>
   <nav class="sb-nav">
     <div class="ni active" onclick="goPage('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span data-i18n="nav_dashboard">Dashboard</span></div>
     <div class="ni" onclick="goPage('campaigns',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg><span data-i18n="nav_campaigns">Campaigns</span><span class="ni-badge" id="campBadge">3</span></div>
@@ -876,16 +906,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);display:flex;h
     </div>
     <div class="card" style="margin-top:14px">
       <div class="cb" style="text-align:center">
-        <div style="font-size:13px;font-weight:600;color:var(--t1)" data-i18n="version_info">NGF NOMI TOOLS</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v3.0.4 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Oct 2024 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">FREE SOFTWARE</span></div>
+        <div style="font-size:13px;font-weight:600;color:var(--t1)" data-i18n="version_info">KG TRF Tool</div>
+        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.2 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.2</span></div>
         <div style="font-size:11px;color:var(--pl);margin-top:8px;padding:8px;background:var(--pdim);border-radius:6px;border:1px solid rgba(124,58,237,.3)">
-          Created by NGF NOMI · 100% FREE · No License Required
+          KG TRF Tool · v5.9.2
         </div>
       </div>
     </div>
   </div></div>
 
-  <div class="footer" data-i18n="footer">© 2024 NGF NOMI - 100% FREE SOFTWARE</div>
+  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.2</div>
 </main>
 
 <input type="hidden" id="internalLinkCount" value="3">
@@ -1057,7 +1087,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);display:flex;h
           <option value="custom">Custom website (enter URL below)</option>
         </select>
       </div>
-      <div class="f" id="tsCustomField" style="display:none"><label class="fl">Custom referrer URL</label><input type="text" id="tsCustomUrl" placeholder="https://www.example.com/"><div class="hint">Kisi bhi website ka URL — usi ka referrer ban jayega.</div></div>
+      <div class="f" id="tsCustomField" style="display:none"><label class="fl">Custom referrer URL</label><input type="text" id="tsCustomUrl" placeholder="facebook.com or https://www.example.com/"><div class="hint">Scheme optional: facebook.com bhi chalega (auto https://). Usi ka referrer ban jayega.</div></div>
       <div class="div"></div>
       <div style="display:flex;gap:10px;margin-top:6px">
         <button class="btn btn-p" onclick="enableTrafficSource()" style="flex:1;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Enable</span></button>
@@ -1336,7 +1366,7 @@ function tsSyncModalFromHidden(){
   const mode=get('trafficSourceMode','random');
   const m=document.getElementById('tsMode');if(m)m.value=(mode==='fixed')?'fixed':'random';
   const sel=document.getElementById('tsSource');if(sel)sel.value=get('trafficSourceSelect','random')||'random';
-  const cu=document.getElementById('tsCustomUrl');if(cu)cu.value=get('trafficSourceCustomUrl','');
+  const cu=document.getElementById('tsCustomUrl');if(cu)cu.value=normalizeReferrerUrl(get('trafficSourceCustomUrl',''));
   tsSetMode(mode);
 }
 function tsSourceLabel(){
@@ -1344,7 +1374,7 @@ function tsSourceLabel(){
   if(mode!=='fixed')return 'RANDOM';
   const src=(document.getElementById('trafficSourceSelect')||{}).value||'random';
   if(src==='custom'){
-    const url=((document.getElementById('trafficSourceCustomUrl')||{}).value||'').trim();
+    const url=normalizeReferrerUrl((document.getElementById('trafficSourceCustomUrl')||{}).value||'');
     try{return new URL(url).hostname.replace(/^www\./,'').toUpperCase();}catch(e){return 'CUSTOM';}
   }
   return String(src||'random').toUpperCase();
@@ -1365,11 +1395,16 @@ function enableTrafficSource(){
   if(mode!=='fixed')source='random';
   let customUrl='';
   if(mode==='fixed'&&source==='custom'){
-    customUrl=((document.getElementById('tsCustomUrl')||{}).value||'').trim();
-    if(!/^https?:\/\/[^\s]+\.[^\s]+/i.test(customUrl)){
-      addLog('error','Traffic Source: valid custom referrer URL daalein (https://site.com)');
+    const raw=((document.getElementById('tsCustomUrl')||{}).value||'').trim();
+    customUrl=normalizeReferrerUrl(raw);
+    if(!customUrl){
+      const m='Traffic Source: valid referrer daalein, e.g. facebook.com ya https://www.facebook.com';
+      addLog('error',m);
+      showToast(m,'error');
       return;
     }
+    // Write the normalized value back so the user can see what will be sent.
+    try{const inp=document.getElementById('tsCustomUrl');if(inp)inp.value=customUrl;}catch(e){}
   }
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=String(v);};
   set('trafficSourceEnabled','1');
@@ -1378,6 +1413,7 @@ function enableTrafficSource(){
   set('trafficSourceCustomUrl',customUrl);
   updateTrafficSourceBadge();
   addLog('info','Traffic Source enabled: '+(mode==='random'?'random (Facebook/YouTube/TikTok/etc. per visit)':'always '+tsSourceLabel()));
+  showToast('Traffic Source ON'+(mode==='random'?' — random source per visit':' — always '+tsSourceLabel()),'success');
   saveFormData();
 }
 function disableTrafficSource(){
@@ -1391,7 +1427,7 @@ function getTrafficSourceData(){
   if(!on)return{trafficSource:{enabled:false}};
   const mode=((document.getElementById('trafficSourceMode')||{}).value==='fixed')?'fixed':'random';
   const source=(document.getElementById('trafficSourceSelect')||{}).value||'random';
-  const customUrl=((document.getElementById('trafficSourceCustomUrl')||{}).value||'').trim();
+  const customUrl=normalizeReferrerUrl((document.getElementById('trafficSourceCustomUrl')||{}).value||'');
   return{trafficSource:{enabled:true,mode,source:(mode==='fixed'?source:'random'),customUrl:(mode==='fixed'&&source==='custom')?customUrl:''}};
 }
 
@@ -1406,13 +1442,16 @@ function getVisitTimeData(){return{visitTimeMs:parseInt(document.getElementById(
 
 function selMode(el,m){document.querySelectorAll('.mi').forEach(i=>i.classList.remove('active'));el.classList.add('active');curMode=m;saveFormData();const keywordsField=document.getElementById('keywords').closest('.f');if(m==='direct'){keywordsField.style.display='none';addLog('info',t('direct_mode_selected'));}else if(m==='gmaps'){keywordsField.style.display='none';addLog('info',t('gmaps_mode_selected'));}else{keywordsField.style.display='block';addLog('info',t('organic_mode_selected'));}const refPlatformField=document.getElementById('refPlatformField');if(refPlatformField){refPlatformField.style.display=m==='referral'?'block':'none';}}
 let currentDevice='desktop';
-function selDev(dev){
+function selDev(dev,preserveResCategory){
   currentDevice=dev;
   try{localStorage.setItem('deviceMode',dev);}catch(e){}
   document.getElementById('dbDesk').classList.toggle('active',dev==='desktop');
   document.getElementById('dbMob').classList.toggle('active',dev==='mobile');
+  // Device mode and resolution category are separate settings. Restoring a
+  // saved profile must not silently flip the saved Screen Resolution category,
+  // so programmatic restores pass preserveResCategory=true.
   if(dev==='mobile'){
-    selResCategory('mobile');
+    if(!preserveResCategory)selResCategory('mobile');
     const numThreads=parseInt(document.getElementById('numThreads').value)||5;
     const resolutions=[];
     for(let i=0;i<numThreads;i++){
@@ -1422,7 +1461,7 @@ function selDev(dev){
     addLog('info',t('mobile_mode_log'));
     addLog('info',numThreads+' '+t('threads_label')+': '+resolutions.map((r,i)=>'T'+(i+1)+':'+r.width+'×'+r.height).join(', '));
   }else{
-    selResCategory('desktop');
+    if(!preserveResCategory)selResCategory('desktop');
     addLog('info',t('desktop_mode_log'));
   }
 }
@@ -1441,6 +1480,41 @@ function selStab(i){document.querySelectorAll('.stab').forEach((t,j)=>t.classLis
 let sessionCount=0,visitCount=0,isRunning=false,isPaused=false,statusTimer=null,uptimeSec=0,upTimer=null;let logStats={total:0,ok:0,err:0,warn:0};let lastLogCount=0;
 function ts(){const n=new Date();return`[${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}]`;}
 function addLog(type,msg){const tagMap={info:'INFO',success:'SUCCESS',error:'ERROR',warn:'WARNING'};const tag=tagMap[type]||'INFO';const cls=type==='success'?'success':type==='error'?'error':type==='warn'?'warn':'info';const row=`<div class="lr"><span class="lts">${ts()}</span><span class="ltag ${cls}">${tag}</span><span class="lmsg ${type==='success'||type==='error'||type==='warn'?cls:''}">${msg}</span></div>`;const dl=document.getElementById('dashLogs');dl.insertAdjacentHTML('beforeend',row);dl.scrollTop=dl.scrollHeight;const fl=document.getElementById('fullLogs');fl.insertAdjacentHTML('beforeend',row);fl.scrollTop=fl.scrollHeight;logStats.total++;if(type==='success')logStats.ok++;else if(type==='error')logStats.err++;else if(type==='warn')logStats.warn++;document.getElementById('log-total').textContent=logStats.total;document.getElementById('log-ok').textContent=logStats.ok;document.getElementById('log-err').textContent=logStats.err;document.getElementById('log-warn').textContent=logStats.warn;}
+
+// Visible notifications. addLog() only writes to the (possibly hidden) log
+// console, which made a rejected URL / proxy problem look like "Start does
+// nothing". Every blocking validation now also raises a toast.
+function showToast(msg,type){
+  try{
+    type=type||'info';
+    let box=document.querySelector('.toast-container');
+    if(!box){box=document.createElement('div');box.className='toast-container';document.body.appendChild(box);}
+    const el=document.createElement('div');
+    el.className='toast '+type;
+    el.textContent=String(msg||'');
+    box.appendChild(el);
+    setTimeout(()=>{try{el.remove();}catch(e){}},4400);
+  }catch(e){}
+}
+
+// Accept "example.com", "www.example.com/page", "https://example.com".
+function normalizeUrlInput(raw){
+  let v=String(raw||'').trim();
+  if(!v)return '';
+  if(v.startsWith('//'))v='https:'+v;
+  if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(v))v='https://'+v;
+  try{
+    const u=new URL(v);
+    if(!u.hostname||u.hostname.indexOf('.')===-1)return '';
+    return u.toString();
+  }catch(e){return '';}
+}
+function normalizeReferrerUrl(raw){
+  const v=normalizeUrlInput(raw);
+  if(!v)return '';
+  try{return new URL(v).origin+'/';}catch(e){return '';}
+}
+
 function addSysLog(type,msg){addLog(type,msg);}
 
 function setStatus(s){const dot=document.getElementById('sbDot');dot.className='dot';const sbStat=document.getElementById('sbStat');if(s==='run'){sbStat.textContent=t('running_status');dot.classList.add('run');}else if(s==='pause'){sbStat.textContent=t('paused_status');dot.style.background='var(--ylw)';dot.style.boxShadow='0 0 5px var(--ylw)';dot.classList.add('run');}else if(s==='stop'){sbStat.textContent=t('stopped_status');dot.classList.add('stop');}else{sbStat.textContent=t('idle');dot.classList.add('idle');}}
@@ -1515,7 +1589,7 @@ function renderProxyList(proxies){const tbody=document.getElementById('px-table'
 async function restoreProxies(){try{const proxies=await fetchLoadedProxies();if(!proxies||!proxies.length)return;renderProxyList(proxies);const input=document.getElementById('px-input');if(input&&!input.value.trim()){input.value=proxies.map(p=>p.raw||(p.host+':'+p.port)).join('\n');}try{const savedTest=localStorage.getItem('proxyTestUrl');const ti=document.getElementById('px-test-url');if(ti&&savedTest)ti.value=savedTest;const rb=document.getElementById('px-real-browser');if(rb&&localStorage.getItem('proxyRealBrowser')==='0')rb.checked=false;if(rb)rb.addEventListener('change',()=>{try{localStorage.setItem('proxyRealBrowser',rb.checked?'1':'0');}catch(e){}});}catch(e){}try{const savedType=localStorage.getItem('proxyType');if(savedType){const sel=document.getElementById('px-type');if(sel)sel.value=savedType;}}catch(e){}}catch(e){}}
 
 function startCamp(){startCampRunner();}
-async function startCampRunner(){const url=document.getElementById('websiteUrl').value.trim();const keywords=document.getElementById('keywords').value.trim();const restaurant=document.getElementById('bizName').value.trim();const bizUrl=document.getElementById('bizUrl').value.trim();const scrollModeEl=document.getElementById('scrollMode');const scrollDirectionEl=document.getElementById('scrollDirection');const scrollDistanceEl=document.getElementById('scrollDistance');const scrollDurationEl=document.getElementById('scrollDuration');const scrollSettings={scrollMode:scrollModeEl?scrollModeEl.value:'natural',scrollDirection:scrollDirectionEl?scrollDirectionEl.value:'down',scrollDistance:scrollDistanceEl?(parseInt(scrollDistanceEl.value)||800):800,scrollDuration:scrollDurationEl?(parseInt(scrollDurationEl.value)||5000):5000};if(!url){addLog('error',t('enter_website_url'));return;}if(curMode==='organic'&&!keywords){addLog('error',t('enter_keywords_organic'));return;}if(curMode==='gmaps'&&!restaurant){addLog('error',t('enter_biz_name_gmaps'));return;}if(isRunning)return;isRunning=true;isPaused=false;sessionCount=0;visitCount=0;uptimeSec=0;lastLogCount=0;const sbS0=document.getElementById('sbSess');if(sbS0)sbS0.textContent='0';const sbV0=document.getElementById('sbVisits');if(sbV0)sbV0.textContent='0';startUptime();setStatus('run');updateActionButtons('running');enableFormFields(false);addLog('info',t('campaign_started_log')+' → '+url);addLog('info',t('mode_label')+': '+curMode+' | '+t('default_sessions')+': '+document.getElementById('numSessions').value);if(autoLoopEnabled){addLog('info',t('auto_loop_on_log'));}if(curMode==='referral'){const refPlatformEl=document.getElementById('refPlatform');const refPlatform=refPlatformEl?refPlatformEl.value:'random';addLog('info',t('ref_platform_log')+': '+refPlatform);}const proxiesRaw0=await fetchLoadedProxies();let proxiesRaw=proxiesRaw0;if(proxiesRaw.length){proxiesRaw=await ensureWorkingProxies(proxiesRaw);const okCount=proxiesRaw.filter(p=>p&&p.status==='ok').length;if(!okCount){addLog('error','Koi working proxy nahi mila. Proxies page par "Real browser check" ON rakhein aur Validate All chalayein, phir Start karein.');isRunning=false;setStatus('stop');updateActionButtons('stopped');enableFormFields(true);if(upTimer){clearInterval(upTimer);upTimer=null;}return;}addLog('success',t('proxies_available_log')+': '+okCount+' working / '+proxiesRaw.length);}else{addLog('warn',t('no_proxies_backend'));}const proxies=buildProxyPayload(proxiesRaw);
+async function startCampRunner(){const urlRaw=document.getElementById('websiteUrl').value.trim();const url=normalizeUrlInput(urlRaw);const keywords=document.getElementById('keywords').value.trim();const restaurant=document.getElementById('bizName').value.trim();const bizUrlRaw=document.getElementById('bizUrl').value.trim();const bizUrl=normalizeUrlInput(bizUrlRaw);const scrollModeEl=document.getElementById('scrollMode');const scrollDirectionEl=document.getElementById('scrollDirection');const scrollDistanceEl=document.getElementById('scrollDistance');const scrollDurationEl=document.getElementById('scrollDuration');const scrollSettings={scrollMode:scrollModeEl?scrollModeEl.value:'natural',scrollDirection:scrollDirectionEl?scrollDirectionEl.value:'down',scrollDistance:scrollDistanceEl?(parseInt(scrollDistanceEl.value)||800):800,scrollDuration:scrollDurationEl?(parseInt(scrollDurationEl.value)||5000):5000};if(!url){const m=urlRaw?('Invalid website URL "'+urlRaw+'". Use a full domain, e.g. https://example.com'):t('enter_website_url');addLog('error',m);showToast(m,'error');return;}if(url!==urlRaw){try{document.getElementById('websiteUrl').value=url;}catch(e){}}if(curMode==='organic'&&!keywords){addLog('error',t('enter_keywords_organic'));showToast(t('enter_keywords_organic'),'error');return;}if(curMode==='gmaps'&&!restaurant){addLog('error',t('enter_biz_name_gmaps'));showToast(t('enter_biz_name_gmaps'),'error');return;}if(curMode==='gmaps'&&bizUrlRaw&&!bizUrl){const m='Invalid business website URL "'+bizUrlRaw+'". Use a full domain, e.g. https://example.com';addLog('error',m);showToast(m,'error');return;}if(bizUrl&&bizUrl!==bizUrlRaw){try{document.getElementById('bizUrl').value=bizUrl;}catch(e){}}if(isRunning){showToast('A campaign is already running. Stop it first.','warn');return;}isRunning=true;isPaused=false;sessionCount=0;visitCount=0;uptimeSec=0;lastLogCount=0;const sbS0=document.getElementById('sbSess');if(sbS0)sbS0.textContent='0';const sbV0=document.getElementById('sbVisits');if(sbV0)sbV0.textContent='0';startUptime();setStatus('run');updateActionButtons('running');enableFormFields(false);addLog('info',t('campaign_started_log')+' → '+url);addLog('info',t('mode_label')+': '+curMode+' | '+t('default_sessions')+': '+document.getElementById('numSessions').value);if(autoLoopEnabled){addLog('info',t('auto_loop_on_log'));}if(curMode==='referral'){const refPlatformEl=document.getElementById('refPlatform');const refPlatform=refPlatformEl?refPlatformEl.value:'random';addLog('info',t('ref_platform_log')+': '+refPlatform);}const proxiesRaw0=await fetchLoadedProxies();let proxiesRaw=proxiesRaw0;if(proxiesRaw.length){proxiesRaw=await ensureWorkingProxies(proxiesRaw);const okCount=proxiesRaw.filter(p=>p&&p.status==='ok').length;if(!okCount){const pm='Koi working proxy nahi mila. Proxies page par "Real browser check" ON rakhein aur Validate All chalayein, phir Start karein. Ya Proxies → Clear karein aur direct IP se chalayein.';addLog('error',pm);showToast(pm,'error');isRunning=false;setStatus('stop');updateActionButtons('stopped');enableFormFields(true);if(upTimer){clearInterval(upTimer);upTimer=null;}return;}addLog('success',t('proxies_available_log')+': '+okCount+' working / '+proxiesRaw.length);}else{addLog('warn',t('no_proxies_backend'));}const proxies=buildProxyPayload(proxiesRaw);
 // Enable auto-restart on server if toggle is on
 if(autoLoopEnabled){fetch('http://localhost:3000/api/autorestart/enable',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:true})}).catch(()=>{});}
 const uaData=getUaCampaignData();if(uaData.userAgents&&uaData.userAgents.length){addLog('info',t('ua_selected_log')+': '+uaData.userAgents.length+' ('+uaData.uaMode+')');}
@@ -1718,6 +1792,7 @@ function selResCategory(cat){
   document.getElementById('dbResMobile').classList.toggle('active',cat==='mobile');
   document.getElementById('resDesktopView').style.display=cat==='desktop'?'block':'none';
   document.getElementById('resMobileView').style.display=cat==='mobile'?'block':'none';
+  saveFormData();
   addLog('info',t('resolution_category')+': '+(cat==='desktop'?t('ua_desktop'):t('ua_mobile')));
 }
 
@@ -1730,6 +1805,7 @@ function applyResolution(w,h,el){
   document.getElementById('res-current-h').textContent=h;
   document.querySelectorAll('.res-item').forEach(i=>i.classList.remove('active'));
   if(el)el.classList.add('active');
+  saveFormData();
   addLog('success',t('resolution_set')+': '+w+' × '+h);
 }
 
@@ -1869,16 +1945,27 @@ function getResolutionData(){
 
 async function loadCurrentResolution(){
   try{
+    // A saved resolution (Screen Resolution page) always wins. The window size
+    // is only a fallback on the very first launch.
+    let hasSaved=false;
+    try{
+      const raw=localStorage.getItem('trafficdrive_form');
+      const d=raw?JSON.parse(raw):null;
+      hasSaved=!!(d&&d.currentResolution&&parseInt(d.currentResolution.width,10)&&parseInt(d.currentResolution.height,10));
+    }catch(e){}
+    if(hasSaved){restoreResolutionUi();return;}
     const result=window.trafficdrive?await window.trafficdrive.getWindowSize():null;
     if(result&&result.success){
       currentResolution={width:result.width,height:result.height};
-      document.getElementById('res-current-w').textContent=result.width;
-      document.getElementById('res-current-h').textContent=result.height;
+      const w=document.getElementById('res-current-w');
+      const h=document.getElementById('res-current-h');
+      if(w)w.textContent=result.width;
+      if(h)h.textContent=result.height;
     }
   }catch(error){}
 }
 
-document.addEventListener('DOMContentLoaded',async()=>{initTheme();initLanguage();loadFormData();loadCampaigns();scrollLinkSystemEnabled=false;const sst=document.getElementById('scrollSystemToggle');if(sst)sst.classList.remove('on');const sstx=document.getElementById('scrollStatusText');if(sstx){sstx.textContent=t('system_off');sstx.style.color='var(--t3)';}loadCurrentResolution();loadBrowserEngineSettings();loadSettings();bindSettingsAutosave();bindProxyContextMenu();restoreProxies();try{const savedDevice=localStorage.getItem('deviceMode');if(savedDevice==='mobile'||savedDevice==='desktop'){selDev(savedDevice);}}catch(e){}await loadUserAgents();try{const savedUa=localStorage.getItem('selectedUaStrings');if(savedUa){const strs=JSON.parse(savedUa);strs.forEach(s=>{const el=document.querySelector(`[data-ua-string="${encodeURIComponent(s)}"]`);if(el)el.classList.add('active');});updateUaCount();}}catch(e){}setupAutoSave();saveCampaigns();});
+document.addEventListener('DOMContentLoaded',async()=>{initTheme();initLanguage();loadFormData();loadCampaigns();scrollLinkSystemEnabled=false;const sst=document.getElementById('scrollSystemToggle');if(sst)sst.classList.remove('on');const sstx=document.getElementById('scrollStatusText');if(sstx){sstx.textContent=t('system_off');sstx.style.color='var(--t3)';}loadCurrentResolution();loadBrowserEngineSettings();loadSettings();bindSettingsAutosave();bindProxyContextMenu();restoreProxies();try{const savedDevice=localStorage.getItem('deviceMode');if(savedDevice==='mobile'||savedDevice==='desktop'){let hasSavedResCat=false;try{const f=JSON.parse(localStorage.getItem('trafficdrive_form')||'{}');hasSavedResCat=f.currentResCategory==='mobile'||f.currentResCategory==='desktop';}catch(e){}selDev(savedDevice,hasSavedResCat);}}catch(e){}await loadUserAgents();try{const savedUa=localStorage.getItem('selectedUaStrings');if(savedUa){const strs=JSON.parse(savedUa);strs.forEach(s=>{const el=document.querySelector(`[data-ua-string="${encodeURIComponent(s)}"]`);if(el)el.classList.add('active');});updateUaCount();}}catch(e){}setupAutoSave();saveCampaigns();});
 
 // User Agents System — Dynamic from Useragent.js via API
 let currentUaCategory='desktop';
@@ -2200,14 +2287,53 @@ const UA_ICONS={
 };
 
 function saveFormData(){
-  const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','scrollMode','scrollDirection','scrollDistance','scrollDuration','scrollPagesToOpen','scrollReadTime','scrollAmount','scrollStayTime','visitTimeMs','internalLinkVisitTimeMs','mapsLoadWaitSec','searchResultWaitSec','websiteLoadWaitSec','typingDelayMs','stepRetryAttempts','stepRetryDelaySec','randomClickEnabled','randomClickBurstMin','randomClickBurstMax','randomClickIntervalMin','randomClickIntervalMax','randomClickInitialDelay','randomClickClickGapMin','randomClickClickGapMax','randomClickRevertNav','randomClickScroll','randomClickScrollAmount','randomClickScrollDir','randomClickMax','randomClickRefresh','randomClickRefreshMin','randomClickRefreshMax','trafficSourceEnabled','trafficSourceMode','trafficSourceSelect','trafficSourceCustomUrl'];
+  const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','scrollMode','scrollDirection','scrollDistance','scrollDuration','scrollPagesToOpen','scrollReadTime','scrollAmount','scrollStayTime','visitTimeMs','internalLinkVisitTimeMs','mapsLoadWaitSec','searchResultWaitSec','websiteLoadWaitSec','typingDelayMs','stepRetryAttempts','stepRetryDelaySec','randomClickEnabled','randomClickBurstMin','randomClickBurstMax','randomClickIntervalMin','randomClickIntervalMax','randomClickInitialDelay','randomClickClickGapMin','randomClickClickGapMax','randomClickRevertNav','randomClickScroll','randomClickScrollAmount','randomClickScrollDir','randomClickMax','randomClickRefresh','randomClickRefreshMin','randomClickRefreshMax','trafficSourceEnabled','trafficSourceMode','trafficSourceSelect','trafficSourceCustomUrl','customResW','customResH','autoRotateThreads'];
   const data={};
   fields.forEach(id=>{const el=document.getElementById(id);if(el)data[id]=el.value;});
   data.curMode=curMode;
   data.curHeadlessMode=curHeadlessMode;
   data.currentDevice=currentDevice;
   data.autoRotateEnabled=autoRotateEnabled;
+  data.currentResCategory=currentResCategory;
+  data.currentResolution={width:currentResolution.width,height:currentResolution.height};
   try{localStorage.setItem('trafficdrive_form',JSON.stringify(data));}catch(e){}
+}
+
+// Put the saved resolution/auto-rotate values back into the UI without firing
+// the toggles (toggleAutoRotate would flip the restored value).
+function restoreResolutionUi(){
+  const w=parseInt(currentResolution.width,10)||1400;
+  const h=parseInt(currentResolution.height,10)||900;
+  const cw=document.getElementById('customResW');
+  const ch=document.getElementById('customResH');
+  if(cw)cw.value=w;
+  if(ch)ch.value=h;
+  const ew=document.getElementById('res-current-w');
+  const eh=document.getElementById('res-current-h');
+  if(ew)ew.textContent=w;
+  if(eh)eh.textContent=h;
+  const want=(w+'×'+h);
+  document.querySelectorAll('.res-item').forEach(i=>{
+    const dims=i.querySelector('.res-dims');
+    const txt=dims?dims.textContent.toLowerCase().replace(/[^0-9x×]/g,'').replace(/x/g,'×'):'';
+    i.classList.toggle('active',txt===want);
+  });
+  const tog=document.getElementById('autoRotateToggle');
+  const label=document.getElementById('autoRotateLabel');
+  const status=document.getElementById('res-auto-status');
+  if(tog)tog.classList.toggle('on',!!autoRotateEnabled);
+  if(label){label.textContent=autoRotateEnabled?'ON':'OFF';label.style.color=autoRotateEnabled?'var(--grn)':'var(--t3)';}
+  if(status){status.textContent=autoRotateEnabled?'ON':'OFF';status.style.color=autoRotateEnabled?'var(--grn)':'';}
+  if(typeof currentResCategory==='string'&&(currentResCategory==='desktop'||currentResCategory==='mobile')){
+    const d=document.getElementById('dbResDesktop');
+    const m=document.getElementById('dbResMobile');
+    if(d)d.classList.toggle('active',currentResCategory==='desktop');
+    if(m)m.classList.toggle('active',currentResCategory==='mobile');
+    const dv=document.getElementById('resDesktopView');
+    const mv=document.getElementById('resMobileView');
+    if(dv)dv.style.display=currentResCategory==='desktop'?'block':'none';
+    if(mv)mv.style.display=currentResCategory==='mobile'?'block':'none';
+  }
 }
 
 function loadFormData(){
@@ -2215,11 +2341,19 @@ function loadFormData(){
     const saved=localStorage.getItem('trafficdrive_form');
     if(!saved){updateRandomClickBadge();updateTrafficSourceBadge();return;}
     const data=JSON.parse(saved);
-    const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','scrollMode','scrollDirection','scrollDistance','scrollDuration','scrollPagesToOpen','scrollReadTime','scrollAmount','scrollStayTime','visitTimeMs','internalLinkVisitTimeMs','mapsLoadWaitSec','searchResultWaitSec','websiteLoadWaitSec','typingDelayMs','stepRetryAttempts','stepRetryDelaySec','randomClickEnabled','randomClickBurstMin','randomClickBurstMax','randomClickIntervalMin','randomClickIntervalMax','randomClickInitialDelay','randomClickClickGapMin','randomClickClickGapMax','randomClickRevertNav','randomClickScroll','randomClickScrollAmount','randomClickScrollDir','randomClickMax','randomClickRefresh','randomClickRefreshMin','randomClickRefreshMax','trafficSourceEnabled','trafficSourceMode','trafficSourceSelect','trafficSourceCustomUrl'];
+    const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','scrollMode','scrollDirection','scrollDistance','scrollDuration','scrollPagesToOpen','scrollReadTime','scrollAmount','scrollStayTime','visitTimeMs','internalLinkVisitTimeMs','mapsLoadWaitSec','searchResultWaitSec','websiteLoadWaitSec','typingDelayMs','stepRetryAttempts','stepRetryDelaySec','randomClickEnabled','randomClickBurstMin','randomClickBurstMax','randomClickIntervalMin','randomClickIntervalMax','randomClickInitialDelay','randomClickClickGapMin','randomClickClickGapMax','randomClickRevertNav','randomClickScroll','randomClickScrollAmount','randomClickScrollDir','randomClickMax','randomClickRefresh','randomClickRefreshMin','randomClickRefreshMax','trafficSourceEnabled','trafficSourceMode','trafficSourceSelect','trafficSourceCustomUrl','customResW','customResH','autoRotateThreads'];
     fields.forEach(id=>{const el=document.getElementById(id);if(el&&data[id]!==undefined)el.value=data[id];});
+    if(data.currentResCategory==='mobile'||data.currentResCategory==='desktop')currentResCategory=data.currentResCategory;
+    if(data.currentResolution&&parseInt(data.currentResolution.width,10)&&parseInt(data.currentResolution.height,10)){
+      currentResolution={width:parseInt(data.currentResolution.width,10),height:parseInt(data.currentResolution.height,10)};
+    }else if(data.customResW&&data.customResH){
+      currentResolution={width:parseInt(data.customResW,10)||1400,height:parseInt(data.customResH,10)||900};
+    }
+    autoRotateEnabled=!!data.autoRotateEnabled;
+    restoreResolutionUi();
     if(data.curMode){const modeItems=document.querySelectorAll('.mi');modeItems.forEach(i=>i.classList.remove('active'));modeItems.forEach(i=>{const mn=i.querySelector('.mname');if(mn){const mt=mn.textContent.toLowerCase();if((data.curMode==='organic'&&mt.includes('organic'))||(data.curMode==='direct'&&mt.includes('direct'))||(data.curMode==='referral'&&mt.includes('referral'))||(data.curMode==='gmaps'&&mt.includes('map'))){i.classList.add('active');}}});curMode=data.curMode;const kf=document.getElementById('keywords')?.closest('.f');if(kf)kf.style.display=(curMode==='direct'||curMode==='gmaps')?'none':'block';const rpf=document.getElementById('refPlatformField');if(rpf)rpf.style.display=curMode==='referral'?'block':'none';}
     if(data.curHeadlessMode){selHeadlessMode(data.curHeadlessMode);}
-    if(data.currentDevice){selDev(data.currentDevice);}
+    if(data.currentDevice){selDev(data.currentDevice,true);}
     updateVisitTimeHint();
     updateRandomClickBadge();
     updateTrafficSourceBadge();
@@ -2227,10 +2361,20 @@ function loadFormData(){
 }
 
 function setupAutoSave(){
-  const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','scrollMode','scrollDirection','scrollDistance','scrollDuration','scrollPagesToOpen','scrollReadTime','scrollAmount','scrollStayTime'];
+  const fields=['websiteUrl','keywords','numSessions','pagesSession','delayMin','delayMax','maxVisits','numThreads','bizName','bizUrl','scrollMode','scrollDirection','scrollDistance','scrollDuration','scrollPagesToOpen','scrollReadTime','scrollAmount','scrollStayTime','customResW','customResH','autoRotateThreads'];
   fields.forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('change',saveFormData);el.addEventListener('input',saveFormData);}});
   document.querySelectorAll('.mi').forEach(el=>el.addEventListener('click',()=>setTimeout(saveFormData,50)));
   document.querySelectorAll('.db').forEach(el=>el.addEventListener('click',()=>setTimeout(saveFormData,50)));
+  // Native toggles on the resolution / user-agent pages do not fire `change`.
+  const ro=document.getElementById('autoRotateToggle');
+  if(ro)ro.addEventListener('click',()=>setTimeout(saveFormData,0));
+  const uaTog=document.getElementById('uaAutoRotateToggle');
+  if(uaTog)uaTog.addEventListener('click',()=>setTimeout(()=>{
+    try{localStorage.setItem('uaAutoRotate',uaAutoRotateEnabled?'1':'0');}catch(e){}
+  },0));
+  // Save once more when the app is closed/hidden so the very last edit is kept.
+  window.addEventListener('beforeunload',()=>{try{saveFormData();persistSettingsQuiet();}catch(e){}});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){try{saveFormData();persistSettingsQuiet();}catch(e){}}});
 }
 
 // ===========================================================================
@@ -2356,7 +2500,7 @@ function loadUserAgents(){
       el.setAttribute('data-ua-string',encodeURIComponent(item.ua));
       el.setAttribute('data-ua-browser',item.browser.toLowerCase());
       el.setAttribute('data-ua-os',item.os.toLowerCase());
-      el.onclick=()=>{el.classList.toggle('active');updateUaCount();};
+      el.onclick=()=>{el.classList.toggle('active');updateUaCount();persistUaSelection();};
       el.innerHTML=(logo?'<div class="ua-icon">'+logo+'</div>':'<div class="ua-icon">'+(UA_ICONS[iconKey]||UA_ICONS.generic||'')+'</div>')+
         '<div class="ua-browser">'+item.browser+'</div>'+
         '<div class="ua-os">'+item.os+'</div>'+
@@ -2398,11 +2542,18 @@ function selectAllUa(){
   if(!container)return;
   container.querySelectorAll('.ua-item').forEach(el=>{if(el.style.display!=='none')el.classList.add('active');});
   updateUaCount();
+  persistUaSelection();
 }
 
 function deselectAllUa(){
   document.querySelectorAll('.ua-item.active').forEach(el=>el.classList.remove('active'));
   updateUaCount();
+  persistUaSelection();
+}
+
+function persistUaSelection(){
+  const selected=[...document.querySelectorAll('.ua-item.active')].map(el=>decodeURIComponent(el.getAttribute('data-ua-string')));
+  try{localStorage.setItem('selectedUaStrings',JSON.stringify(selected));}catch(e){}
 }
 
 function applyUaSelection(){
@@ -2411,12 +2562,18 @@ function applyUaSelection(){
   addLog('success',t('ua_apply_selected')+': '+selected.length);
 }
 
-function toggleUaAutoRotate(){
-  uaAutoRotateEnabled=!uaAutoRotateEnabled;
+function setUaAutoRotateUi(){
   const toggle=document.getElementById('uaAutoRotateToggle');
   const label=document.getElementById('uaAutoRotateLabel');
-  if(toggle)toggle.classList.toggle('on',uaAutoRotateEnabled);
+  const status=document.getElementById('ua-auto-rotate-status');
+  if(toggle)toggle.classList.toggle('on',!!uaAutoRotateEnabled);
   if(label)label.textContent=uaAutoRotateEnabled?'ON':'OFF';
+  if(status){status.textContent=uaAutoRotateEnabled?'ON':'OFF';status.style.color=uaAutoRotateEnabled?'var(--grn)':'';}
+}
+
+function toggleUaAutoRotate(){
+  uaAutoRotateEnabled=!uaAutoRotateEnabled;
+  setUaAutoRotateUi();
   try{localStorage.setItem('uaAutoRotate',uaAutoRotateEnabled?'1':'0');}catch(e){}
 }
 
@@ -2642,6 +2799,7 @@ function loadPrivacySettings(){
     if(savedRotate==='1')uaAutoRotateEnabled=true;
   }catch(e){}
   renderPrivacySections();
+  try{setUaAutoRotateUi();}catch(e){}
 }
 
 // Render privacy sections on load

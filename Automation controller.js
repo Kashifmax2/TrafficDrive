@@ -240,7 +240,7 @@
     rpaLog('Starting RPA recording' + (url ? ' → ' + url : ' (blank page)') +
       (recordingProxy ? ' via ' + recordingProxy.host + ':' + recordingProxy.port : ' (no proxy — direct IP)'), 'info');
     if (!recordingProxy) {
-      rpaLog('WARNING: koi proxy select nahi hai. Recording browser PC ke direct IP par khulega. Chahiye to Stop karein, proxy select karein phir Start karein.', 'warn');
+      rpaLog('Network: direct IP (same as a normal browser). Ads and sites behave normally; choose a proxy only if you need another country exit.', 'info');
     }
     const sessionEl = document.getElementById('rpa-session-name');
     if (sessionEl) sessionEl.textContent = rpaSessionName;
@@ -494,9 +494,9 @@
     const proxyModeEl = document.getElementById('rpa-rec-proxy-mode-' + idx);
     let proxyMode = proxyModeEl
       ? proxyModeEl.value
-      : (rec.proxyMode || (rec.proxy ? 'saved' : 'global'));
+      : (rec.proxyMode || (rec.proxy ? 'saved' : 'none'));
     if (proxyMode !== 'saved' && proxyMode !== 'global' && proxyMode !== 'random' && proxyMode !== 'none') {
-      proxyMode = rec.proxy ? 'saved' : 'global';
+      proxyMode = rec.proxy ? 'saved' : 'none';
     }
     return { loop, sessions, headless, proxyMode };
   }
@@ -538,10 +538,10 @@
       const loop = Math.max(1, parseInt(rec.loop, 10) || 1);
       const sessions = Math.min(10, Math.max(1, parseInt(rec.sessions, 10) || 1));
       const headless = rec.headless === true;
-      const recProxyModeRaw = rec.proxyMode || (rec.proxy ? 'saved' : 'global');
+      const recProxyModeRaw = rec.proxyMode || (rec.proxy ? 'saved' : 'none');
       const recProxyMode = (recProxyModeRaw === 'none' || recProxyModeRaw === 'random' || recProxyModeRaw === 'global' || recProxyModeRaw === 'saved')
         ? recProxyModeRaw
-        : (rec.proxy ? 'saved' : 'global');
+        : (rec.proxy ? 'saved' : 'none');
       const proxyLabel = rec.proxyLabel || (rec.proxy && rec.proxy.host ? (rec.proxy.host + ':' + rec.proxy.port) : 'direct IP');
       const statLine = [
         actionCount + ' actions',
@@ -609,7 +609,7 @@
     const speedEl = document.getElementById('rpaReplaySpeed');
     const speed = parseFloat(speedEl && speedEl.value) || 1;
     const verifyProxy = ((document.getElementById('rpaVerifyProxy') || {}).value || '1') !== '0';
-    const cardProxyMode = settings.proxyMode || (rec.proxy ? 'saved' : 'global');
+    const cardProxyMode = settings.proxyMode || (rec.proxy ? 'saved' : 'none');
     const globalProxy = rpaProxyModeFromSelect();
     let proxyMode = 'none';
     let proxy = null;
@@ -634,7 +634,7 @@
     }
 
     if (proxyMode === 'none') {
-      rpaLog('WARNING: no proxy for this replay. The browser will use the PC direct IP and ad networks can see it. Select a proxy or Random working proxy.', 'warn');
+      rpaLog('Network: this replay uses your own direct IP, exactly like a normal browser (best for ads and lowest ban risk). Select a proxy only if you need a different country exit.', 'info');
     }
 
     // Persist the card's values so a reload keeps the same configuration.

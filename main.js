@@ -4,6 +4,14 @@ const path = require('path');
 // Keep a global reference of the window object so it isn't garbage collected.
 let mainWindow;
 
+// The product is now called "KG TRF Tool". Pin the user-data folder to the
+// folder the previous build used, otherwise Electron would create a new empty
+// profile and every saved setting / RPA recording would look "reset" after an
+// upgrade.
+try {
+  app.setPath('userData', path.join(app.getPath('appData'), 'trafficdrive'));
+} catch (_) {}
+
 // Linux: several distributions (Ubuntu 24.04+) restrict unprivileged user
 // namespaces, which makes Electron's Chromium sandbox abort at startup. The
 // renderer already runs with sandbox:false and Playwright is launched with
@@ -90,7 +98,7 @@ function createWindow() {
       height: 900,
       minWidth: 1100,
       minHeight: 700,
-      title: 'TrafficDrive v5.9',
+      title: 'KG TRF Tool v5.9.2',
       backgroundColor: '#1a1a1a',
       autoHideMenuBar: true,
       icon: path.join(__dirname, 'logo.png'),
@@ -149,7 +157,7 @@ function createWindow() {
         mainWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(
           '<html><body style="background:#1a1a1a;color:#f0f0ff;font-family:sans-serif;' +
           'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0">' +
-          '<h1 style="color:#a78bfa">NGF NOMI TOOLS</h1>' +
+          '<h1 style="color:#a78bfa">KG TRF Tool</h1>' +
           '<p style="color:#9090b0;margin:10px 0">Failed to load the dashboard.</p>' +
           '<p style="color:#555570;font-size:13px">Please restart the application.</p>' +
           '<p style="color:#555570;font-size:12px;margin-top:20px">Error: ' + errorDescription + ' (' + errorCode + ')</p>' +
