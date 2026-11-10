@@ -183,6 +183,60 @@ const RICH = `<!doctype html>
 <div class="cookie"><p>We use cookies to improve your experience.</p><a id="cookieLink" href="/cookie">Accept all</a></div>
 </body></html>`;
 
+// Live popunder page shape: an invisible, third-party <a> stretched over the
+// whole viewport covers every slot. A naive "is the slot on top?" check would
+// skip all of them, even though a real click opens the ad through this layer.
+function overlayPage(adHref) {
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><title>popunder overlay</title>
+<style>
+  body{margin:0;font-family:Arial,sans-serif;background:#f5f5f5}
+  .sponsor-link{display:flex;align-items:center;justify-content:center;width:728px;height:90px;
+    margin:18px auto;background:#fff;border:1px solid #e5e5e5;color:#111;
+    font-size:13px;font-weight:700;text-decoration:none}
+  .spacer{height:1100px}
+  #popLayer{position:fixed;left:0;top:0;width:100vw;height:100vh;display:block;
+    background:transparent;z-index:2147483647;text-decoration:none;
+    font-size:0;color:transparent}
+</style></head>
+<body>
+<a class="sponsor-link sponsor-link-top" id="topBanner" href="/offer-banner"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='60'%3E%3Crect width='90' height='60' fill='%232563eb'/%3E%3C/svg%3E" width="90" height="60" alt="" style="margin-right:12px">SPONSORED &middot; See today's offers &rarr;</a>
+<div class="spacer"></div>
+<a id="popLayer" href="${adHref}" target="_blank" rel="sponsored noopener"></a>
+</body></html>`;
+}
+
+// Live social-bar shape: a display iframe whose anchor is `href="#"` and the
+// site's own JS (window.open) opens the real offer. The click shield must not
+// swallow the "#" click, otherwise a useless "page/#" tab is opened instead.
+const SOCIAL_FRAME = `<!doctype html>
+<html><head><meta charset="utf-8"><title>social bar page</title>
+<style>
+  body{margin:0;font-family:Arial,sans-serif;background:#f5f5f5}
+  .spacer{height:1100px}
+  iframe{display:block;margin:20px auto;border:0}
+</style></head>
+<body>
+<iframe id="socialFrame" src="/socialframe-inner" width="300" height="250" title="Advertisement"></iframe>
+<div class="spacer"></div>
+</body></html>`;
+
+const SOCIAL_INNER = `<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html,body{margin:0;height:100%;font-family:Arial,sans-serif}
+  a{display:flex;width:100%;height:100%;align-items:center;justify-content:center;
+    background:#fff;color:#111;font-size:15px;font-weight:700;text-decoration:none}
+</style></head>
+<body>
+<a id="socialLink" href="#">SPONSORED &middot; Claim your reward</a>
+<script>
+  document.getElementById('socialLink').addEventListener('click', function (e) {
+    e.preventDefault();
+    window.open('/offer-social?real=1', '_blank');
+  });
+</script>
+</body></html>`;
+
 
 function startFixtureServer() {
   const hits = [];
@@ -197,6 +251,22 @@ function startFixtureServer() {
     if (url.pathname === '/rich') {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       res.end(RICH);
+      return;
+    }
+    if (url.pathname === '/overlay') {
+      const adHref = 'http://localhost:' + server.address().port + '/offer-pop';
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(overlayPage(adHref));
+      return;
+    }
+    if (url.pathname === '/socialframe') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(SOCIAL_FRAME);
+      return;
+    }
+    if (url.pathname === '/socialframe-inner') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(SOCIAL_INNER);
       return;
     }
     if (url.pathname === '/plain') {
@@ -399,6 +469,115 @@ async function main() {
       richOpened.join(' ')
     );
     await rich.close();
+
+    // ── live popunder layer: every slot is covered by a click anchor ─────
+    console.log('\n[ads] Popunder click layer covering the page ...');
+    const overlay = await context.newPage();
+    await overlay.goto(base + '/overlay', { waitUntil: 'load' });
+    await sleep(400);
+
+    const overlayHref = await overlay.evaluate(() => {
+      const a = document.getElementById('popLayer');
+      return a ? a.href : '';
+    });
+    const overlayCands = await collectAdCandidates(overlay, { config: { adOnly: true } });
+    const overlayIds = await overlay.evaluate(
+      (sels) =>
+        sels
+          .map((s) => {
+            try {
+              const el = document.querySelector(s);
+              return el ? el.id || el.tagName.toLowerCase() : null;
+            } catch (_) {
+              return null;
+            }
+          })
+          .filter(Boolean),
+      overlayCands.map((c) => c.sel)
+    );
+    check('ad slot under the click layer is still found', overlayIds.includes('topBanner'), overlayIds.join(','));
+    check('full-page popunder layer is found as an ad', overlayIds.includes('popLayer'), overlayIds.join(','));
+
+    const overlayOpened = [];
+    const overlayStats = { clicks: 0 };
+    for (let i = 0; i < 10 && overlayStats.clicks < 2; i++) {
+      await adClickOnce(overlay, overlayStats, {
+        config: cfg,
+        sessionId: 'overlay',
+        onLog: () => {},
+        openBackground: async (href) => {
+          overlayOpened.push(href);
+          return null;
+        },
+      });
+      await sleep(150);
+    }
+    check('covered slots still get clicked', overlayStats.clicks >= 1, 'clicks=' + overlayStats.clicks);
+    check(
+      'popunder layer opens its real ad destination',
+      overlayOpened.length > 0 && overlayOpened.every((u) => u === overlayHref),
+      overlayOpened.join(' ') + ' expected ' + overlayHref
+    );
+    check(
+      'no empty "#" destination from a popunder page',
+      !overlayOpened.some((u) => /#$/.test(new URL(u).href)),
+      overlayOpened.join(' ')
+    );
+    await overlay.close();
+
+    // ── social bar: href="#" plus a window.open handler in an iframe ─────
+    console.log('\n[ads] Social bar with href="#" + window.open ...');
+    const social = await context.newPage();
+    await social.goto(base + '/socialframe', { waitUntil: 'load' });
+    await sleep(500);
+
+    const socialCands = await collectAdCandidates(social, { config: { adOnly: true } });
+    const socialIds = await social.evaluate(
+      (sels) =>
+        sels
+          .map((s) => {
+            try {
+              const el = document.querySelector(s);
+              return el ? el.id || el.tagName.toLowerCase() : null;
+            } catch (_) {
+              return null;
+            }
+          })
+          .filter(Boolean),
+      socialCands.map((c) => c.sel)
+    );
+    check('social-bar ad iframe is found', socialIds.includes('socialFrame'), socialIds.join(','));
+
+    const socialOpened = [];
+    const socialStats = { clicks: 0 };
+    for (let i = 0; i < 10 && socialStats.clicks < 2; i++) {
+      await adClickOnce(social, socialStats, {
+        config: cfg,
+        sessionId: 'social',
+        onLog: () => {},
+        openBackground: async (href) => {
+          socialOpened.push(href);
+          return null;
+        },
+      });
+      await sleep(200);
+    }
+    check(
+      'social bar click opens the real offer',
+      socialOpened.some((u) => /^\/offer-social/.test(new URL(u).pathname)),
+      socialOpened.join(' ')
+    );
+    check(
+      'no "#" link was opened from a JS-only social bar',
+      !socialOpened.some((u) => /#$/.test(new URL(u).href)),
+      socialOpened.join(' ')
+    );
+    check(
+      'social bar never opens the page itself',
+      !socialOpened.some((u) => new URL(u).pathname === '/socialframe'),
+      socialOpened.join(' ')
+    );
+    await social.close();
 
     // ── no ads on the page: nothing may be clicked ───────────────────────
     console.log('\n[ads] Page with no ads ...');

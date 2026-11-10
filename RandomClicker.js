@@ -126,10 +126,27 @@ function backgroundLinkShield() {
   window.__rcForceNewTab = false;
   window.__rcPendingLinks = [];
 
-  const normalize = (href) => {
+  const stripHash = (href) => {
     try {
       const u = new URL(String(href), location.href);
+      u.hash = '';
+      return u.href;
+    } catch (_) {
+      return '';
+    }
+  };
+  const normalize = (href) => {
+    try {
+      const raw = String(href == null ? '' : href).trim();
+      if (!raw || raw.charAt(0) === '#') return '';
+      if (/^javascript:/i.test(raw)) return '';
+      const u = new URL(raw, location.href);
       if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+      // Same-document anchors ("#", "#top") are not ad destinations. Returning
+      // "" makes the caller leave the click alone so the site's own JS handler
+      // (which usually opens the real ad) can run.
+      if (u.href !== stripHash(u.href) && stripHash(u.href) === stripHash(location.href)) return '';
+      if (u.href === stripHash(location.href) || u.href === stripHash(location.href) + '#') return '';
       return u.href;
     } catch (_) {
       return '';
@@ -617,8 +634,11 @@ function pageScanAdSlots(args) {
       return false;
     }
   };
-  const overlaps = (r) => {
+  const overlaps = (r, kind) => {
     for (const u of used) {
+      // A full-page click layer (popunder) sits on top of every slot; it must
+      // not hide the creatives underneath and vice versa.
+      if (kind === 'overlay' || u.kind === 'overlay') continue;
       const ix = Math.max(0, Math.min(r.right, u.right) - Math.max(r.left, u.left));
       const iy = Math.max(0, Math.min(r.bottom, u.bottom) - Math.max(r.top, u.top));
       if (!ix || !iy) continue;
@@ -687,11 +707,11 @@ function pageScanAdSlots(args) {
       return;
     }
     if (r.width < needW || r.height < needH) return;
-    if (overlaps(r)) return;
+    if (overlaps(r, kind)) return;
     const sel = pathOf(el);
     if (!sel || seen.has(sel)) return;
     seen.add(sel);
-    used.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height });
+    used.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height, kind });
     out.push({
       sel,
       kind,
@@ -1029,6 +1049,46 @@ function pageScanAdSlots(args) {
     }
   }
 
+  // 6) popunder click layers: an invisible, third-party anchor stretched over
+  // most of the viewport. On a sponsored page this IS the ad - every click
+  // goes through it - so it must be clickable even while it covers the slots.
+  for (const a of queryAll('a[href]')) {
+    if (out.length >= maxSlots) break;
+    if (a.tagName !== 'A') continue;
+    const href = abs(a.getAttribute('href'));
+    if (!isHttp(href)) continue;
+    let ext = false;
+    try {
+      ext = new URL(href).hostname.replace(/^www\./i, '') !== pageHost;
+    } catch (_) {}
+    if (!ext) continue;
+    let text = '';
+    try {
+      text = clean(a.innerText || '');
+    } catch (_) {}
+    if (text.length > 4) continue;
+    if (a.querySelector && a.querySelector('img,picture,video,canvas,iframe')) continue;
+    let r = null;
+    try {
+      r = a.getBoundingClientRect();
+    } catch (_) {}
+    if (!r || r.width < 200 || r.height < 150) continue;
+    const cover = (r.width * r.height) / Math.max(1, innerWidth * innerHeight);
+    if (cover < 0.45) continue;
+    let cs = null;
+    try {
+      cs = getComputedStyle(a);
+    } catch (_) {}
+    if (!cs || cs.pointerEvents === 'none') continue;
+    if (cs.position !== 'fixed' && cs.position !== 'absolute') continue;
+    if (Math.abs(r.left) > 40 || Math.abs(r.top) > 40) continue;
+    const targetAttr = String(a.getAttribute('target') || '').toLowerCase();
+    const rel = String(a.getAttribute('rel') || '').toLowerCase();
+    if (targetAttr !== '_blank' && !/sponsor|nofollow/.test(rel) && !a.hasAttribute('onclick')) continue;
+    if (a.closest && a.closest('header,nav,footer')) continue;
+    push(a, 'overlay', hostOf(href), null);
+  }
+
   return out;
 }
 
@@ -1147,6 +1207,27 @@ async function adCandidatePoint(page, sel, opts = {}) {
           if (!owns && hit.closest) {
             const marked = hit.closest('[data-ad], ins.adsbygoogle, iframe');
             owns = !!(marked && (marked === el || (el.contains && el.contains(marked))));
+          }
+          // A popunder click layer (invisible third-party anchor over the whole
+          // page) covers every slot. Clicking it still opens the ad, so it is
+          // a valid target instead of a blocker.
+          if (!owns && hit.tagName === 'A' && hit.href) {
+            try {
+              const hu = new URL(hit.href);
+              const hr = hit.getBoundingClientRect();
+              const cover =
+                (hr.width * hr.height) /
+                Math.max(1, (window.innerWidth || 1280) * (window.innerHeight || 800));
+              const hitText = String(hit.innerText || '').trim();
+              if (
+                /^https?:$/i.test(hu.protocol) &&
+                hu.hostname.replace(/^www\./i, '') !== String(location.hostname || '').replace(/^www\./i, '') &&
+                cover >= 0.45 &&
+                hitText.length <= 4
+              ) {
+                owns = true;
+              }
+            } catch (_) {}
           }
           if (!owns) return { ok: false, reason: 'covered' };
           return { ok: true, x, y };
@@ -1310,9 +1391,23 @@ async function settleAfterClick(page, stats, opts, before = {}) {
 
   const seen = new Set();
   let openedNow = 0;
+  // A click layer or an in-page handler can drop a bare "#" link into the
+  // queue. Opening it would just create an empty tab, so drop those.
+  const isSameDoc = (href) => {
+    try {
+      const u = new URL(href);
+      const b = new URL(beforeUrl || page.url());
+      u.hash = '';
+      b.hash = '';
+      return u.href === b.href;
+    } catch (_) {
+      return false;
+    }
+  };
   for (const href of links) {
     if (openedNow >= maxLinks) break;
     if (seen.has(href)) continue;
+    if (isSameDoc(href)) continue;
     seen.add(href);
     let opened = null;
     try {
