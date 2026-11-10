@@ -97,6 +97,93 @@ const FIXTURE = `<!doctype html>
 </div>
 </body></html>`;
 
+// Page shapes from the real sponsored sites that the first scanner missed:
+// label cards without <a href>, cards with many filler nodes, fixed corner
+// banners, a native image widget with an ADVERTISEMENT watermark, and an
+// unmarked creative-sized iframe. The sticky header / cookie bar / article
+// card must stay untouched.
+const RICH = `<!doctype html>
+<html><head><meta charset="utf-8"><title>sponsored shapes</title>
+<style>
+  body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4}
+  .site-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;
+    padding:10px 16px;background:#fff;border-bottom:1px solid #e5e5e5}
+  .site-header a{color:#111;text-decoration:none;font-size:13px}
+  .float-ad{position:fixed;top:8px;right:8px;width:300px;height:110px;z-index:30;
+    display:flex;gap:8px;padding:8px;background:#1f2937;color:#fff}
+  .float-ad .txt{font-size:13px;font-weight:700}
+  .float-ad a{color:#93c5fd;font-size:12px}
+  .board{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px}
+  .js-card,.plain-card{background:#fff;border:1px solid #e5e5e5;border-radius:12px;
+    min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+  .badge{font-size:11px;font-weight:700;letter-spacing:.1em;color:#c2410c;border:1px solid #fdba74;
+    background:#fff7ed;border-radius:999px;padding:4px 9px}
+  .offer{font-size:17px;font-weight:700;color:#111;text-decoration:none}
+  .filler{height:2px}
+  .native-widget{grid-column:1/-1;position:relative;background:#fff;padding:10px}
+  .native-widget .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .native-widget a{color:#111;text-decoration:none;font-weight:700;font-size:13px}
+  .native-widget img{width:100%;height:90px;object-fit:cover}
+  .wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:10px;color:#bbb;letter-spacing:.2em}
+  .article-card{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:10px}
+  .article-card a{color:#111;font-weight:700;text-decoration:none}
+  .cookie{position:fixed;left:8px;bottom:8px;width:280px;padding:10px;background:#fff;border:1px solid #ddd;z-index:40;font-size:12px}
+  .spacer{height:900px}
+</style></head>
+<body>
+<header class="site-header"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect width='24' height='24' fill='%23333'/%3E%3C/svg%3E" width="24" height="24" alt="">
+  <a id="nav1" href="/nav1">Home</a><a id="nav2" href="/nav2">News</a><a id="nav3" href="/nav3">About</a>
+</header>
+
+<div class="float-ad">
+  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='90'%3E%3Crect width='70' height='90' fill='%23b91c1c'/%3E%3C/svg%3E" width="70" height="90" alt="">
+  <div><div class="txt">The Best Times to Quit Your Job</div><a id="offerFloat" href="/offer-float">Learn More</a></div>
+</div>
+
+<div class="board">
+  <div class="js-card">
+    <span class="badge">SPONSORED</span>
+    <div id="offerJs" class="offer" onclick="location.href='/offer-js'" style="cursor:pointer">Claim this offer now</div>
+  </div>
+
+  <div class="js-card">
+    <span class="badge">SPONSORED</span>
+    <div id="offerBare" class="offer">Sponsored offer without handlers</div>
+  </div>
+
+  <div class="plain-card">
+    <span class="badge">SPONSORED</span>
+    <a id="offerPlain" class="offer" href="/offer-plain">Open the sponsored offer</a>
+    <div class="filler"></div><div class="filler"></div><div class="filler"></div>
+    <div class="filler"></div><div class="filler"></div><div class="filler"></div>
+    <div class="filler"></div><div class="filler"></div><div class="filler"></div>
+    <div class="filler"></div><div class="filler"></div>
+  </div>
+
+  <div class="native-widget">
+    <div class="grid">
+      <a id="offerW1" href="/offer-w1"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='90'%3E%3Crect width='200' height='90' fill='%233b82f6'/%3E%3C/svg%3E" alt=""><br>Tuner: Stream without signup</a>
+      <a id="offerW2" href="/offer-w2"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='90'%3E%3Crect width='200' height='90' fill='%23ef4444'/%3E%3C/svg%3E" alt=""><br>Divorced women nearby want to talk</a>
+      <a id="offerW3" href="/offer-w3"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='90'%3E%3Crect width='200' height='90' fill='%2310b981'/%3E%3C/svg%3E" alt=""><br>Withdrawn 3 times in one week</a>
+      <a id="offerW4" href="/offer-w4"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='90'%3E%3Crect width='200' height='90' fill='%23f59e0b'/%3E%3C/svg%3E" alt=""><br>Get Free Spins Now!</a>
+    </div>
+    <span class="wm">ADVERTISEMENT</span>
+  </div>
+
+  <iframe id="adCommon" src="/adframe?o=12" width="300" height="250" style="border:0"></iframe>
+
+  <div class="article-card">
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='90'%3E%3Crect width='200' height='90' fill='%236b7280'/%3E%3C/svg%3E" width="200" height="90" alt="">
+    <a id="articleLink" href="/article">Read the full story</a>
+  </div>
+
+  <div class="spacer"></div>
+</div>
+
+<div class="cookie"><p>We use cookies to improve your experience.</p><a id="cookieLink" href="/cookie">Accept all</a></div>
+</body></html>`;
+
+
 function startFixtureServer() {
   const hits = [];
   const server = http.createServer((req, res) => {
@@ -105,6 +192,11 @@ function startFixtureServer() {
     if (url.pathname === '/') {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       res.end(FIXTURE);
+      return;
+    }
+    if (url.pathname === '/rich') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(RICH);
       return;
     }
     if (url.pathname === '/plain') {
@@ -243,6 +335,70 @@ async function main() {
       opened.join(' ')
     );
     check('no click was wasted on whitespace', stats.clicks === (stats.adClicks || 0));
+
+    // ── real-world shapes: label cards, fixed banner, native widget ──────
+    console.log('\n[ads] Native / floating / unmarked shapes ...');
+    const rich = await context.newPage();
+    await rich.goto(base + '/rich', { waitUntil: 'load' });
+    await sleep(400);
+
+    const richCandidates = await collectAdCandidates(rich, { config: { adOnly: true } });
+    const richIds = await rich.evaluate(
+      (sels) =>
+        sels.map((s) => {
+          try {
+            const el = document.querySelector(s);
+            return el ? el.id || el.tagName.toLowerCase() : null;
+          } catch (_) {
+            return null;
+          }
+        }),
+      richCandidates.map((c) => c.sel)
+    );
+    const richFound = richIds.filter(Boolean);
+    const richHas = (id) => richFound.includes(id);
+
+    check('JS-only sponsored card is found', richHas('offerJs'), richFound.join(','));
+    check('handler-less label card is found', richHas('offerBare'), richFound.join(','));
+    check('label card with filler nodes is found', richHas('offerPlain'), richFound.join(','));
+    check(
+      'native ADVERTISEMENT widget is found',
+      ['offerW1', 'offerW2', 'offerW3', 'offerW4'].some(richHas),
+      richFound.join(',')
+    );
+    check('fixed corner banner is found', richHas('offerFloat'), richFound.join(','));
+    check('unmarked creative-size iframe is found', richHas('adCommon'), richFound.join(','));
+    check('sticky header links are ignored', !['nav1', 'nav2', 'nav3'].some(richHas), richFound.join(','));
+    check('article card link is ignored', !richHas('articleLink'), richFound.join(','));
+    check('cookie bar link is ignored', !richHas('cookieLink'), richFound.join(','));
+
+    const richOpened = [];
+    const richStats = { clicks: 0 };
+    for (let i = 0; i < 12 && richStats.clicks < 5; i++) {
+      await adClickOnce(rich, richStats, {
+        config: cfg,
+        sessionId: 'rich',
+        onLog: () => {},
+        openBackground: async (href) => {
+          richOpened.push(href);
+          return null;
+        },
+      });
+      await sleep(120);
+    }
+    const richAllowed = /^\/(offer-js|offer-plain|offer-w[1-4]|offer-float|offer12)$/;
+    check('clicks land on the new ad shapes', richStats.clicks >= 3, 'clicks=' + richStats.clicks);
+    check(
+      'clicked destinations are all ads',
+      richOpened.every((u) => richAllowed.test(new URL(u).pathname)),
+      richOpened.join(' ')
+    );
+    check(
+      'header / article / cookie were never clicked',
+      !richOpened.some((u) => /^\/(nav|article|cookie)/.test(new URL(u).pathname)),
+      richOpened.join(' ')
+    );
+    await rich.close();
 
     // ── no ads on the page: nothing may be clicked ───────────────────────
     console.log('\n[ads] Page with no ads ...');

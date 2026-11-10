@@ -505,15 +505,37 @@ function pageScanAdSlots(args) {
   // so module-level constants are not available here.
   const AD_HOST = /(adsterra|highperformanceformat|profitableratecpm|monetag|popads|popcash|propellerads|onclickads|onclickmax|hilltopads|exoclick|juicyads|trafficjunky|adcash|clickadu|adnium|trafficstars|tsyndicate|ad-?maven|bidvertiser|mgid|revcontent|taboola|outbrain|zedo|media\.net|amazon-adsystem|doubleclick|googlesyndication|googleadservices|adservice\.google|serving-sys|smartadserver|adform|criteo|pubmatic|rubiconproject|openx|casalemedia|33across|sharethrough|teads|spotx|springserve|adroll|quantserve|scorecardresearch|adx|adsrvr|yieldmo|smaato|inmobi|applovin|unityads|vungle|chartboost|ironsrc|adcolony|tapjoy|fyber|adkernel|adnxs|appnexus|pubnative|moatads|doubleverify|adsafeprotected|agkn|rlcdn|crwdcntrl|bluekai|demdex|everesttech|mathtag|tapad|sitescout|bidswitch|tremor|districtm|gumgum|sovrn|lijit|indexww|ezoic|monumetric|mediavine|raptive|freestar|snigel|setupad|playwire|venatus|nitropay|adplugg)/i;
 
-  const AD_ATTR = /(^|[-_\s])(ads?|adv|advert|advertisement|advertising|adslot|adunit|adbox|adcontainer|adsense|adsbygoogle|sponsor|sponsored|dfp|gpt)([-_\s]|$)/i;
-  const AD_TEXT = /(sponsored|advertisement|adchoices|promoted|anzeige)/i;
-  // Real embeds that are not ads: never click these even if the container has
-  // an "ad" class (many themes reuse one wrapper for all third-party embeds).
-  const EMBED_BLOCK = /(recaptcha|youtube(-nocookie)?\.com\/embed|player\.vimeo|google\.com\/maps|maps\.google|disqus|facebook\.com\/plugins|platform\.twitter|instagram\.com\/embed|openstreetmap|calendly|stripe\.com|js\.stripe|paypal\.com)/i;
+  // "ad" has to be its own word: header / shadow / download must not match.
+  const AD_WORD = /(^|[\s_-])(ads?|adv|advert|advertorial|advertisement|advertising|adslot|adunit|adbox|adcontainer|adsense|adsbygoogle|sponsor|sponsored|dfp|gpt|promo|promoted|taboola|outbrain|mgid|revcontent|zedo)([\s_-]|$)/i;
+  // camelCase / PascalCase class names such as adCard, sponsorBox, nativeAd.
+  const AD_CAMEL = /(^|[\s_-])(ad|ads|adv|advert|advertorial|advertisement|advertising|sponsor|sponsored|promo|promoted)[A-Z]/;
+  const AD_LABEL = /^(sponsored|sponsored content|sponsored post|advertisement|advertising|advert|promoted|paid content|partner content|anzeige|werbung|publicidad|gesponsert)\b/i;
+  const LABEL_NOISE = /(continue reading|story continues|below|scroll)/i;
+
+  // Third-party widgets that are never ads: video, maps, social, captcha,
+  // payments, support chat and cookie/consent tooling.
+  const EMBED_BLOCK = /(recaptcha|hcaptcha|turnstile|challenges\.cloudflare|youtube(-nocookie)?\.com\/embed|player\.vimeo|vimeo\.com\/video|google\.com\/maps|maps\.google|translate\.google|translate\.googleapis|disqus|facebook\.com\/plugins|platform\.twitter|instagram\.com\/embed|openstreetmap|calendly|stripe\.com|js\.stripe|paypal\.com|intercom|tawk\.to|crisp\.chat|drift\.com|zendesk|freshchat|livechat|tidio|olark|hubspot|whatsapp|messenger|calendar\.google|docs\.google|spotify|soundcloud|dailymotion|twitch\.tv|typeform|surveymonkey|giscus\.app|utterances|jwplayer|vidyard|wistia|brightcove|cloudflarestream|mux\.com|cookiebot|consentmanager|usercentrics|onetrust|cookielaw|quantcast|iubenda)/i;
+  const BANNER_EXCLUDE = /(cookie|consent|we use cookies|privacy policy|accept all|subscribe|newsletter|chat with|live chat|customer support|sign in|log in|installation|installing)/i;
+
+  // Creative sizes used by the display networks we see in the wild. A visible
+  // iframe with one of these dimensions is an ad even when its host is unknown.
+  const COMMON_SIZES = [
+    [300, 250], [250, 250], [200, 200], [336, 280],
+    [728, 90], [468, 60], [320, 100], [320, 50], [970, 90], [970, 250],
+    [300, 600], [160, 600], [120, 600], [300, 100], [300, 50],
+    [300, 300], [300, 150], [600, 300], [400, 300], [400, 250], [300, 200],
+    [320, 480], [480, 320],
+  ];
 
   const out = [];
   const used = [];
+  const seen = new Set();
 
+  const clean = (t) =>
+    String(t == null ? '' : t)
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   const abs = (u) => {
     try {
       return new URL(String(u || ''), location.href).href;
@@ -529,6 +551,7 @@ function pageScanAdSlots(args) {
       return String(u || '').slice(0, 40);
     }
   };
+  const pageHost = String(location.hostname || '').replace(/^www\./i, '');
   const classText = (el) => {
     try {
       if (!el) return '';
@@ -538,15 +561,18 @@ function pageScanAdSlots(args) {
       return '';
     }
   };
+  const attrNames = [
+    'data-ad', 'data-ad-slot', 'data-ad-client', 'data-ad-unit', 'data-ad-name',
+    'data-ad-container', 'data-google-query-id', 'data-testid', 'aria-label',
+    'name', 'title', 'role',
+  ];
   const attrsOf = (el, depth) => {
     let text = '';
     let node = el;
     for (let i = 0; node && node.nodeType === 1 && i <= depth; i++) {
       try {
         text += ' ' + (node.id || '') + ' ' + classText(node) + ' ';
-        const names = ['data-ad', 'data-ad-slot', 'data-ad-client', 'data-ad-unit',
-          'data-google-query-id', 'aria-label', 'name', 'title', 'role'];
-        for (const n of names) {
+        for (const n of attrNames) {
           const v = node.getAttribute ? node.getAttribute(n) : '';
           if (v) text += ' ' + v + ' ';
         }
@@ -554,6 +580,15 @@ function pageScanAdSlots(args) {
       node = node.parentElement;
     }
     return text;
+  };
+  const isAdish = (text) => AD_WORD.test(text) || AD_CAMEL.test(text);
+  const isAdLabel = (text) => {
+    const t = clean(text);
+    if (!t || t.length > 60 || LABEL_NOISE.test(t)) return false;
+    if (!AD_LABEL.test(t)) return false;
+    // "SPONSORED", "ADVERTISEMENT", "SPONSORED · offer" - not an article that
+    // merely mentions advertising.
+    return t.length <= 45;
   };
   const isVisible = (el, needW, needH) => {
     try {
@@ -563,10 +598,11 @@ function pageScanAdSlots(args) {
       if (!cs) return false;
       if (cs.display === 'none' || cs.visibility === 'hidden' || cs.visibility === 'collapse') return false;
       if (parseFloat(cs.opacity || '1') <= 0.05) return false;
+      if (cs.pointerEvents === 'none') return false;
       // opacity is not inherited: a transparent card still gives its link a
       // computed opacity of 1, so walk the ancestors.
       let node = el.parentElement;
-      for (let i = 0; node && node.nodeType === 1 && i < 5; i++) {
+      for (let i = 0; node && node.nodeType === 1 && i < 8; i++) {
         const ps = getComputedStyle(node);
         if (ps) {
           if (ps.display === 'none') return false;
@@ -591,8 +627,15 @@ function pageScanAdSlots(args) {
     }
     return false;
   };
+  const sameTagIndex = (node) => {
+    const parent = node.parentElement;
+    if (!parent) return 0;
+    const same = Array.prototype.filter.call(parent.children, (c) => c.tagName === node.tagName);
+    return same.length > 1 ? same.indexOf(node) + 1 : 0;
+  };
   // Stable CSS path - no attribute is written on the page, so a site cannot
-  // discover the clicker by diffing its DOM.
+  // discover the clicker by diffing its DOM. Open shadow roots are addressed
+  // with " >>> " (document element first, then the shadow root content).
   const pathOf = (el) => {
     const parts = [];
     let node = el;
@@ -609,21 +652,27 @@ function pageScanAdSlots(args) {
         .filter((c) => /^[A-Za-z][\w-]*$/.test(c))
         .slice(0, 2);
       if (cls.length) sel += '.' + cls.join('.');
-      const parent = node.parentElement;
-      if (parent) {
-        const same = Array.prototype.filter.call(parent.children, (c) => c.tagName === node.tagName);
-        if (same.length > 1) sel += ':nth-of-type(' + (same.indexOf(node) + 1) + ')';
-      }
+      const nth = sameTagIndex(node);
+      if (nth) sel += ':nth-of-type(' + nth + ')';
       parts.unshift(sel);
+      const parent = node.parentElement;
+      if (!parent) {
+        let root = null;
+        try {
+          root = node.getRootNode ? node.getRootNode() : null;
+        } catch (_) {}
+        if (root && root.host) {
+          const hostSel = pathOf(root.host);
+          return (hostSel ? hostSel + ' >>> ' : '') + parts.join(' > ');
+        }
+        break;
+      }
       node = parent;
     }
     return parts.join(' > ');
   };
   const push = (el, kind, label, contentOk, container) => {
     if (out.length >= maxSlots) return;
-    // A native card's link is only as tall as its text; the card around it is
-    // the ad. Clicks still land on the link itself, but the card has to be a
-    // real creative-sized block.
     const isElement = kind === 'element';
     const needW = isElement ? Math.min(minW, 14) : minW;
     const needH = isElement ? Math.min(minH, 8) : minH;
@@ -640,7 +689,8 @@ function pageScanAdSlots(args) {
     if (r.width < needW || r.height < needH) return;
     if (overlaps(r)) return;
     const sel = pathOf(el);
-    if (!sel) return;
+    if (!sel || seen.has(sel)) return;
+    seen.add(sel);
     used.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height });
     out.push({
       sel,
@@ -653,44 +703,142 @@ function pageScanAdSlots(args) {
       contentOk: contentOk === undefined ? null : contentOk,
     });
   };
-  const pickClickable = (el) => {
-    const hrefOf = (a) => {
+  // Best clickable thing inside a card. Accepts normal links and JS-only
+  // offers (role=link, onclick, cursor:pointer) because many native widgets
+  // render the offer as a div.
+  const clickableIn = (root, allowTextTarget) => {
+    let best = null;
+    const consider = (el) => {
+      if (!el || !el.isConnected) return;
+      let cs = null;
       try {
-        const h = abs(a.getAttribute('href'));
-        return isHttp(h) ? h : '';
-      } catch (_) {
-        return '';
+        cs = getComputedStyle(el);
+      } catch (_) {}
+      if (cs) {
+        if (cs.display === 'none' || cs.visibility === 'hidden' || cs.visibility === 'collapse') return;
+        if (parseFloat(cs.opacity || '1') <= 0.05) return;
+        if (cs.pointerEvents === 'none') return;
       }
+      let text = '';
+      try {
+        text = clean(el.innerText || el.textContent || '');
+      } catch (_) {}
+      // The little SPONSORED badge is not the creative itself.
+      if (text && text.length <= 24 && isAdLabel(text)) return;
+      const isMedia = el.tagName === 'IMG' || el.tagName === 'PICTURE' || el.tagName === 'VIDEO' || el.tagName === 'CANVAS';
+      if (!text && !isMedia && !(el.querySelector && el.querySelector('img,picture,video,canvas'))) return;
+      let score = 10;
+      if (el.tagName === 'A') score += 60;
+      if (el.hasAttribute && el.hasAttribute('onclick')) score += 35;
+      const role = (el.getAttribute && el.getAttribute('role')) || '';
+      if (role === 'link' || role === 'button') score += 25;
+      let cursor = '';
+      try {
+        cursor = getComputedStyle(el).cursor;
+      } catch (_) {}
+      if (cursor === 'pointer') score += 15;
+      if (text) score += Math.min(45, text.length);
+      else if (el.querySelector && el.querySelector('img,picture,video,canvas')) score += 10;
+      let r = null;
+      try {
+        r = el.getBoundingClientRect();
+      } catch (_) {}
+      if (r) score += Math.min(25, Math.sqrt(Math.max(1, r.width * r.height)) / 20);
+      if (!best || score > best.score) best = { el, score };
     };
     try {
-      if (el.tagName === 'A') {
-        const h = hrefOf(el);
-        if (h) return { el, href: h };
+      if (root.matches && root.matches('a[href],[role="link"],[role="button"],[onclick],button')) consider(root);
+      const quick = root.querySelectorAll('a[href],[role="link"],[role="button"],[onclick],button');
+      for (let i = 0; i < quick.length && i < 60; i++) consider(quick[i]);
+      if (!best && allowTextTarget) {
+        // Confirmed ad card: parts of it may be React onClick handlers with no
+        // href and no inline onclick. Prefer the leaf holding the offer text.
+        const all = root.querySelectorAll('div,span,p,strong,b,em,i,font,img,picture,video,canvas');
+        for (let i = 0; i < all.length && i < 400; i++) {
+          const el = all[i];
+          let text = '';
+          try {
+            text = clean(el.innerText || el.textContent || '');
+          } catch (_) {}
+          if (text.length > 90) continue;
+          if (text && text.length <= 24 && isAdLabel(text)) continue;
+          const leaf = !el.children || el.children.length === 0;
+          const isMedia = el.tagName === 'IMG' || el.tagName === 'PICTURE' || el.tagName === 'VIDEO' || el.tagName === 'CANVAS';
+          let score = 5;
+          if (leaf) score += 40;
+          if (text) score += Math.min(35, text.length);
+          if (isMedia) score += 30;
+          if (!leaf && !isMedia) score -= 20;
+          if (!best || score > best.score) best = { el, score };
+        }
       }
-      const inner = el.querySelector('a[href]');
-      if (inner) {
-        const h = hrefOf(inner);
-        if (h) return { el: inner, href: h };
-      }
-      const outer = el.closest ? el.closest('a[href]') : null;
-      if (outer) {
-        const h = hrefOf(outer);
-        if (h) return { el: outer, href: h };
-      }
-      const role = el.getAttribute && (el.getAttribute('role') || '');
-      if (role === 'link' || (el.getAttribute && el.hasAttribute('onclick'))) {
-        return { el, href: '' };
+      if (!best) {
+        const all = root.querySelectorAll('div,span,p,strong,b,img,picture,font');
+        for (let i = 0; i < all.length && i < 400; i++) {
+          let cursor = '';
+          try {
+            cursor = getComputedStyle(all[i]).cursor;
+          } catch (_) {}
+          if (cursor === 'pointer') consider(all[i]);
+        }
       }
     } catch (_) {}
-    return null;
+    return best ? best.el : null;
   };
 
-  // 1) iframes: the shape every display network (Adsterra, Monetag, ...) uses.
-  let frames = [];
+  // All roots: the document plus every open shadow root (ad widgets built as
+  // web components keep their creative in a shadow tree).
+  const roots = [document];
   try {
-    frames = Array.prototype.slice.call(document.querySelectorAll('iframe, frame'));
+    for (let i = 0; i < roots.length && roots.length < 24; i++) {
+      const nodes = roots[i].querySelectorAll('*');
+      for (let j = 0; j < nodes.length; j++) {
+        if (nodes[j].shadowRoot) roots.push(nodes[j].shadowRoot);
+      }
+    }
   } catch (_) {}
-  for (const el of frames) {
+  const queryAll = (sel) => {
+    const found = [];
+    for (const root of roots) {
+      try {
+        const list = root.querySelectorAll(sel);
+        for (let i = 0; i < list.length; i++) found.push(list[i]);
+      } catch (_) {}
+    }
+    return found;
+  };
+  const isFixedNear = (el) => {
+    let node = el;
+    for (let i = 0; node && node.nodeType === 1 && i < 4; i++) {
+      try {
+        const pos = getComputedStyle(node).position;
+        if (pos === 'fixed' || pos === 'sticky') return true;
+      } catch (_) {}
+      node = node.parentElement;
+    }
+    return false;
+  };
+  const labelNear = (el) => {
+    let node = el;
+    for (let i = 0; node && node.nodeType === 1 && i < 3; i++) {
+      const parent = node.parentElement;
+      if (!parent) break;
+      let text = '';
+      try {
+        text = clean(parent.innerText || '');
+      } catch (_) {}
+      if (text && text.length <= 140 && isAdLabel(text.slice(0, 50))) return true;
+      node = parent;
+    }
+    return false;
+  };
+  const nearCommonSize = (w, h) =>
+    COMMON_SIZES.some((s) => Math.abs(w - s[0]) <= 16 && Math.abs(h - s[1]) <= 16);
+
+  // 1) iframes: the shape every display network (Adsterra, Monetag, ...) uses.
+  // Unknown hosts still count when the frame is creative-sized, fixed/floating,
+  // next to a SPONSORED label, third-party, or contains offer-like text.
+  for (const el of queryAll('iframe, frame')) {
     if (!el || !el.isConnected) continue;
     let src = '';
     let srcdoc = '';
@@ -701,62 +849,184 @@ function pageScanAdSlots(args) {
     if (EMBED_BLOCK.test(src)) continue;
     const attrText = attrsOf(el, 3);
     const knownNetwork = AD_HOST.test(src) || AD_HOST.test(srcdoc);
-    const marked = AD_ATTR.test(attrText);
-    if (!knownNetwork && !marked) continue;
+    const marked = isAdish(attrText);
+    let w = 0;
+    let h = 0;
+    try {
+      const r = el.getBoundingClientRect();
+      w = r.width;
+      h = r.height;
+    } catch (_) {}
     let contentOk = null;
+    let adContent = false;
     try {
       const doc = el.contentDocument;
       if (doc) {
         const body = doc.body;
-        const text = body ? String(body.textContent || '').trim() : '';
+        const text = body ? clean(body.textContent || '') : '';
         const kids = body ? body.children.length : 0;
         const media = doc.querySelector('img,video,canvas,iframe,svg,picture,object,embed');
+        const link = doc.querySelector('a[href],[onclick],[role="link"]');
         contentOk = !!(kids > 0 || text.length > 2 || media);
+        if (contentOk && link) {
+          adContent =
+            AD_LABEL.test(text.slice(0, 120)) ||
+            /(sponsored|advertisement|offer|deal|claim|learn more|shop now|buy now|sign up|free spins|casino|betting|download|install)/i.test(
+              text.slice(0, 240)
+            );
+        }
       }
     } catch (_) {
       contentOk = null; // cross-origin: verified from Node instead
     }
     if (contentOk === false) continue; // blank / not filled slot
-    push(el, 'frame', knownNetwork ? hostOf(src || srcdoc) : 'ad iframe', contentOk);
+    let third = false;
+    try {
+      const u = new URL(src || srcdoc || '', location.href);
+      third =
+        /^https?:/i.test(u.href) &&
+        u.hostname.replace(/^www\./i, '') !== pageHost;
+    } catch (_) {}
+    const big = w >= 150 && h >= 80;
+    if (
+      !knownNetwork &&
+      !marked &&
+      !adContent &&
+      !nearCommonSize(w, h) &&
+      !isFixedNear(el) &&
+      !labelNear(el) &&
+      !(third && big)
+    ) {
+      continue;
+    }
+    push(
+      el,
+      'frame',
+      knownNetwork ? hostOf(src || srcdoc) : labelNear(el) ? 'labelled ad frame' : hostOf(src || srcdoc) || 'ad frame',
+      contentOk
+    );
   }
 
-  // 2) slots marked with ad attributes / classes, and native sponsored cards.
-  let all = [];
-  try {
-    all = Array.prototype.slice.call(
-      document.querySelectorAll('div,section,aside,article,figure,li,span,a,p,ins,ul')
-    );
-  } catch (_) {}
-
-  for (const el of all) {
+  // 2) slots marked with ad attributes / classes (adCard, sponsorBox, ...).
+  for (const el of queryAll('div,section,aside,article,figure,li,span,a,p,ins,ul,header,footer')) {
     if (out.length >= maxSlots) break;
     if (el.tagName === 'IFRAME') continue;
     const attrText = attrsOf(el, 1);
-    if (!AD_ATTR.test(attrText)) continue;
-    const picked = pickClickable(el);
-    if (!picked) continue; // nothing clickable inside: not an ad creative
-    push(picked.el, 'element', 'ad slot', null, el);
+    if (!isAdish(attrText)) continue;
+    const picked = clickableIn(el, true);
+    if (!picked) continue;
+    push(picked, 'element', 'ad slot', null, el);
   }
 
-  for (const el of all) {
+  // 3) native cards: a SPONSORED / ADVERTISEMENT badge and the offer next to
+  // it. The badge is often a span inside a big card with no ad class, so climb
+  // to the smallest visible ancestor that contains a clickable offer.
+  for (const el of queryAll('span,div,small,strong,b,p,em,i,label,font')) {
     if (out.length >= maxSlots) break;
-    if (el.tagName === 'IFRAME') continue;
     let text = '';
     try {
-      text = String(el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ');
+      text = clean(el.innerText || el.textContent || '');
     } catch (_) {}
-    if (!text || text.length > 120) continue;
-    // The label must open the block ("SPONSORED / See today's offer"), not be
-    // mentioned inside an article about advertising.
-    if (!AD_TEXT.test(text.slice(0, 40))) continue;
-    let descendants = 0;
+    if (!text || text.length > 60 || LABEL_NOISE.test(text)) continue;
+    if (!isAdLabel(text)) continue;
+    let card = null;
+    let target = null;
+    let node = el;
+    for (let i = 0; node && node.nodeType === 1 && i < 7; i++, node = node.parentElement) {
+      if (node === document.body || node === document.documentElement) break;
+      if (!isVisible(node, minW, minH)) continue;
+      let nodeText = '';
+      try {
+        nodeText = clean(node.innerText || '');
+      } catch (_) {}
+      if (nodeText.length > 600) break;
+      const candidate = clickableIn(node, true);
+      if (!candidate) continue;
+      let r = null;
+      try {
+        r = node.getBoundingClientRect();
+      } catch (_) {}
+      if (r && r.width > innerWidth * 0.95 && r.height > innerHeight * 0.9) continue;
+      card = node;
+      target = candidate;
+      if (r && r.width >= minW && r.height >= minH) break;
+    }
+    if (card && target) push(target, 'element', text.slice(0, 40), null, card);
+  }
+
+  // 4) floating / sticky creatives: "The Best Times to Quit Your Job" style
+  // banner in a page corner. Looks at position:fixed/sticky frames and cards.
+  for (const el of queryAll('div,section,aside,a,figure,span')) {
+    if (out.length >= maxSlots) break;
+    let cs = null;
     try {
-      descendants = el.querySelectorAll('*').length;
+      cs = getComputedStyle(el);
     } catch (_) {}
-    if (descendants > 9) continue; // a card, not a whole section
-    const picked = pickClickable(el);
-    if (!picked) continue;
-    push(picked.el, 'element', text.slice(0, 32), null, el);
+    if (!cs || (cs.position !== 'fixed' && cs.position !== 'sticky')) continue;
+    let r = null;
+    try {
+      r = el.getBoundingClientRect();
+    } catch (_) {}
+    if (!r || r.width < Math.max(120, minW) || r.height < Math.max(60, minH)) continue;
+    if (r.width > innerWidth * 0.95 && r.height > innerHeight * 0.85) continue;
+    let text = '';
+    try {
+      text = clean(el.innerText || '');
+    } catch (_) {}
+    if (text.length > 220 || BANNER_EXCLUDE.test(text)) continue;
+    if (el.matches && (el.matches('header,nav') || el.querySelector('header,nav'))) continue;
+    let links = 0;
+    try {
+      links = el.querySelectorAll('a[href]').length;
+    } catch (_) {}
+    if (links > 2) continue;
+    const media = !!el.querySelector('img,picture,video,canvas,svg,object,embed');
+    const target = clickableIn(el, true);
+    if (!target) continue;
+    const attrText = attrsOf(el, 1);
+    if (!media && !isAdish(attrText) && !isAdLabel(text.slice(0, 60))) continue;
+    push(target, 'element', text ? text.slice(0, 32) : 'fixed banner', null, el);
+  }
+
+  // 5) native image widgets whose headlines carry external / sponsored links
+  // even if the widget has no ad class or visible label.
+  for (const a of queryAll('a[href]')) {
+    if (out.length >= maxSlots) break;
+    const href = abs(a.getAttribute('href'));
+    if (!isHttp(href)) continue;
+    let ext = false;
+    try {
+      ext = new URL(href).hostname.replace(/^www\./i, '') !== pageHost;
+    } catch (_) {}
+    const targetAttr = String(a.getAttribute('target') || '').toLowerCase();
+    const rel = String(a.getAttribute('rel') || '').toLowerCase();
+    const relAd = /sponsor|nofollow/.test(rel);
+    const blankExternal = ext && targetAttr === '_blank';
+    let card = a;
+    for (let i = 0; i < 4 && card && card !== document.body; i++, card = card.parentElement) {
+      if (!isVisible(card, Math.max(120, minW), Math.max(60, minH))) continue;
+      let text = '';
+      try {
+        text = clean(card.innerText || '');
+      } catch (_) {}
+      if (text.length > 500) break;
+      if (BANNER_EXCLUDE.test(text)) break;
+      const media = !!card.querySelector('img,picture,video,canvas');
+      let links = 0;
+      try {
+        links = card.querySelectorAll('a[href]').length;
+      } catch (_) {}
+      if (media && links >= 1 && links <= 8) {
+        const attrText = attrsOf(card, 1);
+        const adish =
+          isAdish(attrText) ||
+          isAdLabel(text.slice(0, 60)) ||
+          relAd ||
+          blankExternal;
+        if (adish) push(a, 'element', text.slice(0, 32), null, card);
+        break;
+      }
+    }
   }
 
   return out;
@@ -834,7 +1104,20 @@ async function adCandidatePoint(page, sel, opts = {}) {
     page
       .evaluate(
         ({ selector, doScroll }) => {
-          const el = document.querySelector(selector);
+          // Selectors may cross open shadow roots ("host >>> inner").
+          const resolve = (sel) => {
+            const parts = String(sel || '').split(' >>> ');
+            let node = document.querySelector(parts[0]);
+            for (let i = 1; i < parts.length && node; i++) {
+              try {
+                node = node.shadowRoot ? node.shadowRoot.querySelector(parts[i]) : null;
+              } catch (_) {
+                node = null;
+              }
+            }
+            return node;
+          };
+          const el = resolve(selector);
           if (!el || !el.isConnected) return { ok: false, reason: 'gone' };
           if (doScroll) {
             try {
