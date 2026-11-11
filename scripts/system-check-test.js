@@ -227,7 +227,9 @@ async function testAudit(device, extras) {
     // this "healthy" silently.
     check('live mobile platform mismatch is reported', !!platform && platform.status === 'fail', platform && platform.detail);
   } else {
-    check('live platform agrees with UA', !!platform && platform.status === 'pass', platform && platform.detail);
+    // A Windows UA on a Linux/macOS host is also a real mismatch. Without
+    // Platform Spoofing the audit must return a definite verdict, never skip.
+    check('live platform check returns a verdict', !!platform && (platform.status === 'pass' || platform.status === 'fail'), platform && platform.detail);
   }
 
   const hints = findCheck(result, 'client_hints');
@@ -304,6 +306,7 @@ async function main() {
   await testAudit('desktop', {
     privacyFeatures: ['webgl-spoof', 'canvas-noise', 'platform-spoof', 'timezone-spoof', 'language-spoof'],
     privacyLevel: 'balanced',
+    expectPlatform: 'pass',
   });
 
   await testEndpoints();
