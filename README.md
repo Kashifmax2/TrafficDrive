@@ -2,7 +2,7 @@
 
 Desktop traffic-automation app built with **Electron + Node.js + Playwright**.
 
-- Product name: **KG TRF Tool** (version **5.9.6**)
+- Product name: **KG TRF Tool** (version **5.9.7**)
 - Dashboard UI: plain HTML/CSS/JS (`index.html`, `i18n.js`)
 - Local REST backend: `server.js` on `http://127.0.0.1:3000`
 - Automation: Playwright 1.63 driving Chromium
@@ -12,6 +12,46 @@ Desktop traffic-automation app built with **Electron + Node.js + Playwright**.
 > Source-only repository. `node_modules`, the Electron runtime, the bundled
 > Chromium browser and the packaged `app.asar` are **not** committed. They are
 > installed or downloaded by the build steps below.
+
+## What's new in 5.9.7
+
+### Session Diagnostics — catch a broken profile before a campaign runs
+
+A new **Session Diagnostics** card on the Privacy page adds two read-only
+preflight checks. Neither one clicks, starts traffic, edits settings or writes
+anything to disk.
+
+- **Fingerprint audit** (`POST /api/diagnostics/fingerprint`) opens **one**
+  short-lived headless Chromium, loads a local loopback probe page and compares
+  what a tracked site actually sees: `navigator.webdriver`, UA vs
+  `navigator.platform`, Client Hints (`mobile` / `platform`), touch points,
+  viewport/DPR, screen size, timezone, language, canvas determinism, WebGL
+  renderer, `hardwareConcurrency` / `deviceMemory`, plugin list and
+  `window.chrome`. Each item is `pass` / `warn` / `fail` with a concrete hint.
+  A score is shown and failures are listed first.
+- **Canvas noise must be deterministic**: two independent draws are hashed.
+  Random noise is reported as a hard failure because it breaks logins and
+  CAPTCHAs on real sites.
+- **Proxy / timezone consistency**: when a target timezone is supplied the audit
+  verifies that the context really reports it (timezone aliases such as
+  `Asia/Calcutta` and `Asia/Kolkata` are treated as equal).
+- **System preflight** (`GET /api/system/check`) reports CPU model, cores, RAM,
+  free disk space, data-folder write access, bundled-browser health, app
+  version, running campaigns and a conservative **recommended thread limit**
+  (`min(20, RAM GB / 1.5, cores × 2)`). The Traffic Settings page shows a hint
+  when the chosen thread count is above the safe value for this PC.
+- The audit runs only when the **Run audit** button is pressed (or the endpoint
+  is called). Nothing runs in the background during a campaign.
+
+### Safety
+
+- The audit reuses the app's own `SessionProfile` / `PrivacyGuard` helpers, so
+  it measures exactly the profile a real session would use.
+- One audit at a time (`_running` guard), 5–25 s timeouts, context and browser
+  always closed, loopback probe server stopped in `finally`.
+- `npm run test:system` adds **82 checks** (system values, check-rule matrix,
+  viewport normalisation, three live audits and both HTTP endpoints). CI runs
+  it on Windows and Linux.
 
 ## What's new in 5.9.6
 
@@ -244,8 +284,8 @@ resolution/auto-rotate values are restored by `loadFormData()`.
 
 ### Windows
 
-1. Download **`KG-TRF-Tool-Setup-5.9.6.exe`** (installer) or
-   **`KG-TRF-Tool-Portable-5.9.6.exe`** (no installation).
+1. Download **`KG-TRF-Tool-Setup-5.9.7.exe`** (installer) or
+   **`KG-TRF-Tool-Portable-5.9.7.exe`** (no installation).
 2. Run it. Because the build is not code-signed, SmartScreen may show
    "Windows protected your PC" → **More info → Run anyway**.
 3. The app opens directly. No Node.js, no Playwright download required.
@@ -256,14 +296,14 @@ every launch (15–30 seconds the first time).
 ### Linux (AppImage — recommended)
 
 ```bash
-chmod +x KG-TRF-Tool-5.9.6-x86_64.AppImage
-./KG-TRF-Tool-5.9.6-x86_64.AppImage
+chmod +x KG-TRF-Tool-5.9.7-x86_64.AppImage
+./KG-TRF-Tool-5.9.7-x86_64.AppImage
 ```
 
 - Ubuntu 22.04+ needs FUSE 2 for AppImage:
   `sudo apt install libfuse2`
 - If your desktop blocks AppImage, extract and run:
-  `./KG-TRF-Tool-5.9.6-x86_64.AppImage --appimage-extract` then
+  `./KG-TRF-Tool-5.9.7-x86_64.AppImage --appimage-extract` then
   `./squashfs-root/AppRun` (or `./squashfs-root/KG-TRF-Tool`)
 - The app starts with `--no-sandbox` on Linux only, because Ubuntu 24.04+
   restricts unprivileged user namespaces. This does not change campaign
@@ -272,7 +312,7 @@ chmod +x KG-TRF-Tool-5.9.6-x86_64.AppImage
 ### Linux (deb)
 
 ```bash
-sudo apt install ./KG-TRF-Tool-5.9.6-amd64.deb
+sudo apt install ./KG-TRF-Tool-5.9.7-amd64.deb
 kg-trf-tool
 ```
 
@@ -284,8 +324,8 @@ declared as dependencies.
 If AppImage/deb cannot be used, extract the portable archive and run it:
 
 ```bash
-tar -xzf KG-TRF-Tool-5.9.6-linux-x64-portable.tar.gz
-./KG-TRF-Tool-5.9.6-linux-x64/KG-TRF-Tool
+tar -xzf KG-TRF-Tool-5.9.7-linux-x64-portable.tar.gz
+./KG-TRF-Tool-5.9.7-linux-x64/KG-TRF-Tool
 ```
 
 It contains the same app and bundled Chromium; only the installer integration
@@ -308,7 +348,7 @@ watch the real browser through your browser tab.
 
    This installs Xvfb / x11vnc / noVNC / Chromium libraries (once per
    codespace), starts a 1600x900 virtual desktop, downloads and extracts the
-   `5.9.6` AppImage, and launches KG TRF Tool.
+   `5.9.7` AppImage, and launches KG TRF Tool.
 3. Open the **Ports** tab → port **3000**:
 
    ```
@@ -328,7 +368,7 @@ watch the real browser through your browser tab.
    `bash scripts/codespaces.sh` starts the app again instantly.
 
 The script also works on any headless Ubuntu/Debian machine (VPS, container).
-Set `TD_VERSION=5.9.6` to pick a different release.
+Set `TD_VERSION=5.9.7` to pick a different release.
 
 > Note: Codespace IPs are datacenter IPs. Some ad networks may label them
 > "Anonymous Proxy". For real ad fill, run the app on a normal residential
@@ -350,8 +390,8 @@ openbox &
 x11vnc -display :99 -nopw -forever -shared -rfbport 5900 &
 websockify --web /usr/share/novnc 6080 localhost:5900 &
 
-chmod +x KG-TRF-Tool-5.9.6-x86_64.AppImage
-./KG-TRF-Tool-5.9.6-x86_64.AppImage --appimage-extract
+chmod +x KG-TRF-Tool-5.9.7-x86_64.AppImage
+./KG-TRF-Tool-5.9.7-x86_64.AppImage --appimage-extract
 ./squashfs-root/AppRun --no-sandbox
 ```
 
@@ -360,8 +400,8 @@ unavailable in the container, always use the `--appimage-extract` route above,
 or the portable tar:
 
 ```bash
-tar -xzf KG-TRF-Tool-5.9.6-linux-x64-portable.tar.gz
-./KG-TRF-Tool-5.9.6-linux-x64/KG-TRF-Tool --no-sandbox
+tar -xzf KG-TRF-Tool-5.9.7-linux-x64-portable.tar.gz
+./KG-TRF-Tool-5.9.7-linux-x64/KG-TRF-Tool --no-sandbox
 ```
 
 Notes:
@@ -389,7 +429,7 @@ Both jobs then run the full privacy + device audit (`npm run test:privacy`)
 and the only-ads regression test (`npm run test:ads`) before building, so a
 broken toggle or a broken ad click fails the build instead of shipping.
 
-Pushing a tag (`git tag v5.9.6 && git push origin v5.9.6`) also publishes a
+Pushing a tag (`git tag v5.9.7 && git push origin v5.9.7`) also publishes a
 GitHub Release with all files attached.
 
 ## Build from source
@@ -508,8 +548,8 @@ credentials or recordings.
    git push -u origin main
    ```
 3. GitHub → **Actions** → *Build installers* → **Run workflow**.
-4. Windows ke liye `KG-TRF-Tool-Setup-5.9.6.exe`, Linux ke liye
-   `KG-TRF-Tool-5.9.6-x86_64.AppImage` download karo.
+4. Windows ke liye `KG-TRF-Tool-Setup-5.9.7.exe`, Linux ke liye
+   `KG-TRF-Tool-5.9.7-x86_64.AppImage` download karo.
 5. Linux par: `chmod +x KG-TRF-Tool-*.AppImage` phir double-click / run.
 6. Source se chalana ho to: `npm install` → `npx playwright install chromium`
    → `npm start`.

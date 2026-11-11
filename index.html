@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KG TRF Tool 5.9.6</title>
+<title>KG TRF Tool 5.9.7</title>
 <script>
 /* API base shim ------------------------------------------------------------
    The Electron app opens index.html over file:// and talks to the loopback
@@ -93,7 +93,7 @@ body.light-mode .rc-adonly-badge{color:#fff;}
 <button class="sb-toggle" onclick="toggleSb()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
 <div class="sb-overlay" onclick="toggleSb()"></div>
 <aside class="sb">
-  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.6</div></div></div>
+  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.7</div></div></div>
   <nav class="sb-nav">
     <div class="ni active" onclick="goPage('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span data-i18n="nav_dashboard">Dashboard</span></div>
     <div class="ni" onclick="goPage('campaigns',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg><span data-i18n="nav_campaigns">Campaigns</span><span class="ni-badge" id="campBadge">0</span></div>
@@ -145,7 +145,7 @@ body.light-mode .rc-adonly-badge{color:#fff;}
           <div class="f"><label class="fl" data-i18n="pages_session">Pages per Session</label><input type="number" id="pagesSession" value="5"></div>
           <div class="f"><label class="fl" data-i18n="delay_time">Delay Time (seconds)</label><div style="display:flex;gap:8px;align-items:center;"><input type="number" id="delayMin" value="3" style="width:80px"><span style="color:var(--t3);font-size:12px" data-i18n="to">to</span><input type="number" id="delayMax" value="7" style="width:80px"></div></div>
           <div class="f"><label class="fl" data-i18n="max_visits">Max Visits</label><input type="number" id="maxVisits" value="5000"></div>
-          <div class="f"><label class="fl" data-i18n="concurrent_threads">Concurrent Threads</label><input type="number" id="numThreads" value="5" min="1" max="500" onchange="updateThreadDisplay()"></div>
+          <div class="f"><label class="fl" data-i18n="concurrent_threads">Concurrent Threads</label><input type="number" id="numThreads" value="5" min="1" max="500" onchange="updateThreadDisplay()"><div class="hint" id="threadRecommendation" style="margin-top:4px"></div></div>
           <div class="f"><label class="fl" data-i18n="headless_mode">Browser Mode</label><div class="devs"><button class="db active" id="dbVisible" onclick="selHeadlessMode('visible')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span data-i18n="opt_vis_debug">Visible</span></button><button class="db" id="dbHeadless" onclick="selHeadlessMode('headless')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><span data-i18n="opt_headless">Headless</span></button></div></div>
         </div>
       </div>
@@ -619,6 +619,18 @@ body.light-mode .rc-adonly-badge{color:#fff;}
       <span class="ua-count" id="privStatusText" style="margin-left:auto">0/34 <span data-i18n="priv_enabled_count">enabled</span></span>
     </div>
     <div id="privSections"></div>
+    <div class="card" style="margin-top:14px">
+      <div class="ch"><div class="ci g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><span class="ct">Session Diagnostics</span>
+        <span class="badge" id="diagBadge" style="margin-left:auto">not run</span>
+        <button class="btn btn-o" id="diagRunBtn" style="margin-left:8px" onclick="runFingerprintAudit()">Run audit</button>
+      </div>
+      <div class="cb">
+        <div class="hint" style="margin-bottom:8px">Read-only preflight: opens one short-lived headless browser and checks whether the selected UA, device, viewport and privacy toggles produce a consistent fingerprint. It never clicks, never starts a campaign and saves nothing.</div>
+        <div id="diagSystem" class="hint" style="margin-bottom:8px">System check...</div>
+        <div id="diagSummary" style="font-size:12px;color:var(--t3)">Not run yet.</div>
+        <div id="diagResults" style="display:none;margin-top:10px"></div>
+      </div>
+    </div>
   </div></div>
 
 
@@ -925,15 +937,15 @@ body.light-mode .rc-adonly-badge{color:#fff;}
     <div class="card" style="margin-top:14px">
       <div class="cb" style="text-align:center">
         <div style="font-size:13px;font-weight:600;color:var(--t1)" data-i18n="version_info">KG TRF Tool</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.6 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.6</span></div>
+        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.7 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.7</span></div>
         <div style="font-size:11px;color:var(--pl);margin-top:8px;padding:8px;background:var(--pdim);border-radius:6px;border:1px solid rgba(124,58,237,.3)">
-          KG TRF Tool · v5.9.6
+          KG TRF Tool · v5.9.7
         </div>
       </div>
     </div>
   </div></div>
 
-  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.6</div>
+  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.7</div>
 </main>
 
 <input type="hidden" id="internalLinkCount" value="3">
@@ -1202,9 +1214,9 @@ setInterval(tick,1000);tick();
 
 const pageMeta={dashboard:{title:'Dashboard',sub:'Automate website traffic with smart controls'},campaigns:{title:'Campaigns',sub:'Manage and monitor all your traffic campaigns'},proxies:{title:'Proxies',sub:'Import, validate and manage your proxy pool'},logs:{title:'Logs',sub:'Full activity log with filtering and export'},settings:{title:'Settings',sub:'Configure application behavior and preferences'},automation:{title:'Scroll System',sub:'Human-like scrolling automation with cruise control'},resolutions:{title:'Screen Resolutions',sub:'Change browser window resolution for different screen sizes'},useragents:{title:'User Agents',sub:'Select and rotate user agents for desktop and mobile browsers'},privacy:{title:'Privacy',sub:'Anti-detection, fingerprint protection & spoofing controls'},browsers:{title:'Browser Library',sub:'All supported browsers with real logos and engine details'},rpa:{title:'RPA Automation',sub:'Record, replay, edit & automate browser actions'},schedule:{title:'Schedule',sub:'Schedule automation tasks with timers and weekly recurring plans'},help:{title:'Help & Support',sub:'Documentation, FAQ, and contact support'}};
 function toggleSb(){document.querySelector('.sb').classList.toggle('open');document.querySelector('.sb-overlay').classList.toggle('open');}
-function goPage(id,el){try{document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));document.getElementById('pg-'+id).classList.add('active');el.classList.add('active');const meta=pageMeta[id]||{title:id,sub:''};document.getElementById('pageTitle').textContent=meta.title;document.getElementById('pageSub').textContent=meta.sub;if(id==='rpa'&&typeof window.rpaRefreshProxySelect==='function'){try{window.rpaRefreshProxySelect();}catch(_){}}if(window.innerWidth<=768){document.querySelector('.sb').classList.remove('open');document.querySelector('.sb-overlay').classList.remove('open');}}catch(err){console.error('[goPage] ERROR:',err.message);}}
+function goPage(id,el){try{document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));document.getElementById('pg-'+id).classList.add('active');el.classList.add('active');const meta=pageMeta[id]||{title:id,sub:''};document.getElementById('pageTitle').textContent=meta.title;document.getElementById('pageSub').textContent=meta.sub;if(id==='rpa'&&typeof window.rpaRefreshProxySelect==='function'){try{window.rpaRefreshProxySelect();}catch(_){}}if(id==='privacy'&&typeof loadSystemCheck==='function'){try{loadSystemCheck();}catch(_){}}if(window.innerWidth<=768){document.querySelector('.sb').classList.remove('open');document.querySelector('.sb-overlay').classList.remove('open');}}catch(err){console.error('[goPage] ERROR:',err.message);}}
 
-function updateThreadDisplay(){const threads=document.getElementById('numThreads').value;addLog('info',t('thread_count_updated')+': '+threads);}
+function updateThreadDisplay(){const threads=document.getElementById('numThreads').value;addLog('info',t('thread_count_updated')+': '+threads);try{applyThreadRecommendation();}catch(e){}}
 function tog(el){el.classList.toggle('on');}
 function initTheme(){const isDark=localStorage.getItem('darkMode')!=='false';if(!isDark)document.body.classList.add('light-mode');const sw=document.querySelector('.sw');if(sw){if(isDark)sw.classList.add('on');else sw.classList.remove('on');}}
 function toggleTheme(){const isDark=!document.body.classList.contains('light-mode');document.body.classList.toggle('light-mode');const nowDark=!document.body.classList.contains('light-mode');localStorage.setItem('darkMode',nowDark);const sw=document.querySelector('.sw');if(sw){if(nowDark)sw.classList.add('on');else sw.classList.remove('on');}}
@@ -2895,6 +2907,138 @@ function getPrivacyData(){
   };
 }
 
+// ===========================================================================
+// SESSION DIAGNOSTICS — read-only preflight
+//
+// loadSystemCheck() asks the backend for CPU/RAM/disk/browser health and the
+// conservative thread limit; runFingerprintAudit() opens one short-lived
+// headless browser to verify that the current UA / device / viewport / privacy
+// toggles produce a consistent fingerprint. Nothing is clicked or saved.
+// ===========================================================================
+let diagSystemData = null;
+
+function diagEsc(v){
+  return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadSystemCheck(retry){
+  try{
+    const r=await fetch('http://localhost:3000/api/system/check',{cache:'no-store'});
+    const d=await r.json();
+    if(!d||!d.success)throw new Error((d&&d.error)||'system check failed');
+    diagSystemData=d;
+    const el=document.getElementById('diagSystem');
+    if(el){
+      const parts=[];
+      parts.push((d.cpuModel||'CPU')+' · '+(d.cores||'?')+' cores');
+      parts.push('RAM '+(d.totalMemGB||'?')+' GB ('+(d.freeMemGB||'?')+' GB free)');
+      if(d.freeDiskGB!=null)parts.push('Disk '+d.freeDiskGB+' GB free');
+      parts.push('Recommended threads: '+(d.recommendedThreads||'?'));
+      if(d.runningCampaigns)parts.push('Running campaigns: '+d.runningCampaigns);
+      if(!d.browserOk)parts.push('⚠ browser missing');
+      else if(!d.dataDirWritable)parts.push('⚠ data folder not writable');
+      el.textContent=parts.join(' · ');
+      el.style.color=(!d.browserOk||!d.dataDirWritable)?'var(--ylw)':'var(--t3)';
+    }
+    applyThreadRecommendation();
+  }catch(e){
+    if(!retry){setTimeout(()=>{loadSystemCheck(true);},2000);return;}
+    const el=document.getElementById('diagSystem');
+    if(el)el.textContent='System check unavailable (backend not reachable).';
+  }
+}
+
+function applyThreadRecommendation(){
+  const input=document.getElementById('numThreads');
+  const hint=document.getElementById('threadRecommendation');
+  if(!input||!hint)return;
+  const safe=diagSystemData?parseInt(diagSystemData.recommendedThreads,10)||0:0;
+  if(!safe){hint.textContent='';return;}
+  const n=parseInt(input.value,10)||0;
+  if(n>safe){
+    hint.textContent='This PC is stable up to ~'+safe+' threads (RAM '+diagSystemData.totalMemGB+' GB). '+n+' can freeze the system - lower it.';
+    hint.style.color='var(--ylw)';
+  }else{
+    hint.textContent='Safe for this PC: up to '+safe+' threads.';
+    hint.style.color='var(--t3)';
+  }
+}
+
+async function runFingerprintAudit(){
+  const btn=document.getElementById('diagRunBtn');
+  const summary=document.getElementById('diagSummary');
+  const box=document.getElementById('diagResults');
+  const badge=document.getElementById('diagBadge');
+  if(btn){btn.disabled=true;btn.textContent='Running...';}
+  if(badge){badge.textContent='running';badge.style.color='var(--t2)';}
+  if(summary)summary.textContent='Opening one headless browser and reading the fingerprint...';
+  try{
+    const uaData=getUaCampaignData();
+    const resData=getResolutionData();
+    const priv=getPrivacyData();
+    const ua=(uaData.userAgents&&uaData.userAgents[0])||'';
+    const r=await fetch('http://localhost:3000/api/diagnostics/fingerprint',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        userAgent:ua,
+        device:currentDevice||'desktop',
+        viewportWidth:resData.viewportWidth,
+        viewportHeight:resData.viewportHeight,
+        privacyFeatures:priv.privacyFeatures,
+        privacyLevel:priv.privacyLevel,
+      }),
+    });
+    const d=await r.json();
+    if(!d||!d.success)throw new Error((d&&d.error)||'audit failed');
+    renderFingerprintAudit(d);
+  }catch(e){
+    if(summary)summary.innerHTML='<span style="color:var(--red)">Audit failed: '+diagEsc(e.message)+'</span>';
+    if(badge){badge.textContent='error';badge.style.color='var(--red)';}
+    if(box)box.style.display='none';
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Run audit';}
+  }
+}
+
+function renderFingerprintAudit(d){
+  const summary=document.getElementById('diagSummary');
+  const box=document.getElementById('diagResults');
+  const badge=document.getElementById('diagBadge');
+  const color=d.failed?'var(--red)':d.warned?'var(--ylw)':'var(--grn)';
+  if(summary){
+    const exp=d.expected||{};
+    const devNote=exp.requestedDevice&&exp.device&&exp.requestedDevice!==exp.device
+      ? ' · device "'+diagEsc(exp.requestedDevice)+'" runs as "'+diagEsc(exp.device)+'" (UA wins)'
+      : '';
+    summary.innerHTML='Score <b style="color:'+color+'">'+d.score+'%</b> · '+d.passed+' pass · '+d.warned+' warn · '+d.failed+' fail · '+d.durationMs+' ms'+devNote;
+  }
+  if(badge){badge.textContent=d.failed?'needs attention':d.warned?'ok with warnings':'healthy';badge.style.color=color;}
+  if(!box)return;
+  const rank={fail:0,warn:1,pass:2};
+  const rows=(d.checks||[]).slice().sort((a,b)=>(rank[a.status]||9)-(rank[b.status]||9)).map(c=>{
+    const icon=c.status==='pass'?'✓':c.status==='warn'?'!':'✕';
+    const col=c.status==='pass'?'var(--grn)':c.status==='warn'?'var(--ylw)':'var(--red)';
+    return '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--bdr);align-items:flex-start">'+
+      '<span style="color:'+col+';font-weight:800;width:14px;flex:none">'+icon+'</span>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:12px;color:var(--t1);font-weight:600">'+diagEsc(c.label)+'</div>'+
+        '<div style="font-size:11px;color:var(--t3);font-family:var(--mono);word-break:break-word">'+diagEsc(c.detail)+'</div>'+
+        (c.status!=='pass'&&c.hint?'<div style="font-size:11px;color:var(--ylw);margin-top:2px">'+diagEsc(c.hint)+'</div>':'')+
+      '</div></div>';
+  }).join('');
+  const env=d.environment||{};
+  const gl=env.webgl?((env.webgl.vendor||'')+' / '+(env.webgl.renderer||'')):'unavailable';
+  const meta='<div class="hint" style="margin-top:8px;word-break:break-word">Viewport '+
+    diagEsc((env.viewport&&env.viewport.width)+'x'+(env.viewport&&env.viewport.height)+' @'+(env.viewport&&env.viewport.dpr)+'x')+
+    ' · TZ '+diagEsc(env.timezone||'?')+
+    ' · Cores '+diagEsc(env.hardwareConcurrency)+
+    ' · WebGL '+diagEsc(gl)+
+    '<br>UA: '+diagEsc(env.userAgent||'')+'</div>';
+  box.innerHTML=(rows||'<div class="hint">No checks returned.</div>')+meta;
+  box.style.display='block';
+}
+
 // Load saved privacy settings on startup
 function loadPrivacySettings(){
   try{
@@ -2908,7 +3052,7 @@ function loadPrivacySettings(){
 }
 
 // Render privacy sections on load
-document.addEventListener('DOMContentLoaded',()=>{loadPrivacySettings();});
+document.addEventListener('DOMContentLoaded',()=>{loadPrivacySettings();setTimeout(()=>{loadSystemCheck();},1500);});
 
 </script>
 <div id="px-menu" class="px-menu"><button onclick="pxMenuRemove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span>Remove Proxy</span></button></div>

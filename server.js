@@ -18,6 +18,8 @@
 //   POST /api/autorestart/enable  → enable auto-restart
 //   POST /api/autorestart/disable → disable auto-restart
 //   GET  /api/browsers/detect  → detect installed browsers
+//   GET  /api/system/check     → CPU/RAM/disk + recommended thread limit
+//   POST /api/diagnostics/fingerprint → read-only fingerprint consistency audit
 //   GET  /api/health           → health check
 
 const http = require('http');
@@ -2116,6 +2118,47 @@ async function handleRequest(req, res) {
   // --- Health check ---
   if (pathname === '/api/health' && method === 'GET') {
     sendJSON(res, 200, { success: true, status: 'ok', processes: processes.size });
+    return;
+  }
+
+  // --- System preflight (read-only) ---
+  if (pathname === '/api/system/check' && method === 'GET') {
+    try {
+      const Diagnostics = require('./Diagnostics.js');
+      const info = Diagnostics.collectSystemInfo({ runningCampaigns: processes.size });
+      sendJSON(res, 200, Object.assign({ success: true }, info));
+    } catch (e) {
+      sendJSON(res, 500, { success: false, error: e.message });
+    }
+    return;
+  }
+
+  // --- Fingerprint audit (one short-lived headless browser, nothing is saved) ---
+  if (pathname === '/api/diagnostics/fingerprint' && method === 'POST') {
+    let body = {};
+    try {
+      body = await readBody(req);
+    } catch (e) {
+      sendJSON(res, 400, { success: false, error: 'invalid JSON body' });
+      return;
+    }
+    try {
+      const Diagnostics = require('./Diagnostics.js');
+      const result = await Diagnostics.runFingerprintAudit({
+        userAgent: body.userAgent || body.ua || '',
+        device: body.device || 'desktop',
+        viewportWidth: body.viewportWidth,
+        viewportHeight: body.viewportHeight,
+        deviceScaleFactor: body.deviceScaleFactor,
+        timezone: body.timezone || '',
+        privacyFeatures: Array.isArray(body.privacyFeatures) ? body.privacyFeatures : [],
+        privacyLevel: body.privacyLevel || 'standard',
+        onLog: () => {},
+      });
+      sendJSON(res, 200, Object.assign({ success: true }, result));
+    } catch (e) {
+      sendJSON(res, 500, { success: false, error: e.message });
+    }
     return;
   }
 
