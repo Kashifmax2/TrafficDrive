@@ -2,7 +2,7 @@
 
 Desktop traffic-automation app built with **Electron + Node.js + Playwright**.
 
-- Product name: **KG TRF Tool** (version **5.9.8**)
+- Product name: **KG TRF Tool** (version **5.9.9**)
 - Dashboard UI: plain HTML/CSS/JS (`index.html`, `i18n.js`)
 - Local REST backend: `server.js` on `http://127.0.0.1:3000`
 - Automation: Playwright 1.63 driving Chromium
@@ -12,6 +12,18 @@ Desktop traffic-automation app built with **Electron + Node.js + Playwright**.
 > Source-only repository. `node_modules`, the Electron runtime, the bundled
 > Chromium browser and the packaged `app.asar` are **not** committed. They are
 > installed or downloaded by the build steps below.
+
+## What's new in 5.9.9
+
+### Help & Support cleanup
+
+- **WhatsApp support removed** — the Help page no longer advertises a WhatsApp
+  number.
+- **Documentation** now opens the app's real release page
+  (`https://github.com/Kashifmax2/TrafficDrive/releases/latest`) with release
+  notes, downloads and the user guide instead of a dead docs URL.
+- **Support email updated** to `kgmax99@gmail.com` (Help card, Gmail compose
+  link, package metadata and the Linux deb maintainer field).
 
 ## What's new in 5.9.8
 
@@ -321,8 +333,8 @@ resolution/auto-rotate values are restored by `loadFormData()`.
 
 ### Windows
 
-1. Download **`KG-TRF-Tool-Setup-5.9.8.exe`** (installer) or
-   **`KG-TRF-Tool-Portable-5.9.8.exe`** (no installation).
+1. Download **`KG-TRF-Tool-Setup-5.9.9.exe`** (installer) or
+   **`KG-TRF-Tool-Portable-5.9.9.exe`** (no installation).
 2. Run it. Because the build is not code-signed, SmartScreen may show
    "Windows protected your PC" → **More info → Run anyway**.
 3. The app opens directly. No Node.js, no Playwright download required.
@@ -333,14 +345,14 @@ every launch (15–30 seconds the first time).
 ### Linux (AppImage — recommended)
 
 ```bash
-chmod +x KG-TRF-Tool-5.9.8-x86_64.AppImage
-./KG-TRF-Tool-5.9.8-x86_64.AppImage
+chmod +x KG-TRF-Tool-5.9.9-x86_64.AppImage
+./KG-TRF-Tool-5.9.9-x86_64.AppImage
 ```
 
 - Ubuntu 22.04+ needs FUSE 2 for AppImage:
   `sudo apt install libfuse2`
 - If your desktop blocks AppImage, extract and run:
-  `./KG-TRF-Tool-5.9.8-x86_64.AppImage --appimage-extract` then
+  `./KG-TRF-Tool-5.9.9-x86_64.AppImage --appimage-extract` then
   `./squashfs-root/AppRun` (or `./squashfs-root/KG-TRF-Tool`)
 - The app starts with `--no-sandbox` on Linux only, because Ubuntu 24.04+
   restricts unprivileged user namespaces. This does not change campaign
@@ -349,7 +361,7 @@ chmod +x KG-TRF-Tool-5.9.8-x86_64.AppImage
 ### Linux (deb)
 
 ```bash
-sudo apt install ./KG-TRF-Tool-5.9.8-amd64.deb
+sudo apt install ./KG-TRF-Tool-5.9.9-amd64.deb
 kg-trf-tool
 ```
 
@@ -361,8 +373,8 @@ declared as dependencies.
 If AppImage/deb cannot be used, extract the portable archive and run it:
 
 ```bash
-tar -xzf KG-TRF-Tool-5.9.8-linux-x64-portable.tar.gz
-./KG-TRF-Tool-5.9.8-linux-x64/KG-TRF-Tool
+tar -xzf KG-TRF-Tool-5.9.9-linux-x64-portable.tar.gz
+./KG-TRF-Tool-5.9.9-linux-x64/KG-TRF-Tool
 ```
 
 It contains the same app and bundled Chromium; only the installer integration
@@ -385,7 +397,7 @@ watch the real browser through your browser tab.
 
    This installs Xvfb / x11vnc / noVNC / Chromium libraries (once per
    codespace), starts a 1600x900 virtual desktop, downloads and extracts the
-   `5.9.8` AppImage, and launches KG TRF Tool.
+   `5.9.9` AppImage, and launches KG TRF Tool.
 3. Open the **Ports** tab → port **3000**:
 
    ```
@@ -405,7 +417,7 @@ watch the real browser through your browser tab.
    `bash scripts/codespaces.sh` starts the app again instantly.
 
 The script also works on any headless Ubuntu/Debian machine (VPS, container).
-Set `TD_VERSION=5.9.8` to pick a different release.
+Set `TD_VERSION=5.9.9` to pick a different release.
 
 > Note: Codespace IPs are datacenter IPs. Some ad networks may label them
 > "Anonymous Proxy". For real ad fill, run the app on a normal residential
@@ -427,8 +439,8 @@ openbox &
 x11vnc -display :99 -nopw -forever -shared -rfbport 5900 &
 websockify --web /usr/share/novnc 6080 localhost:5900 &
 
-chmod +x KG-TRF-Tool-5.9.8-x86_64.AppImage
-./KG-TRF-Tool-5.9.8-x86_64.AppImage --appimage-extract
+chmod +x KG-TRF-Tool-5.9.9-x86_64.AppImage
+./KG-TRF-Tool-5.9.9-x86_64.AppImage --appimage-extract
 ./squashfs-root/AppRun --no-sandbox
 ```
 
@@ -437,8 +449,8 @@ unavailable in the container, always use the `--appimage-extract` route above,
 or the portable tar:
 
 ```bash
-tar -xzf KG-TRF-Tool-5.9.8-linux-x64-portable.tar.gz
-./KG-TRF-Tool-5.9.8-linux-x64/KG-TRF-Tool --no-sandbox
+tar -xzf KG-TRF-Tool-5.9.9-linux-x64-portable.tar.gz
+./KG-TRF-Tool-5.9.9-linux-x64/KG-TRF-Tool --no-sandbox
 ```
 
 Notes:
@@ -466,7 +478,7 @@ Both jobs then run the full privacy + device audit (`npm run test:privacy`)
 and the only-ads regression test (`npm run test:ads`) before building, so a
 broken toggle or a broken ad click fails the build instead of shipping.
 
-Pushing a tag (`git tag v5.9.8 && git push origin v5.9.8`) also publishes a
+Pushing a tag (`git tag v5.9.9 && git push origin v5.9.9`) also publishes a
 GitHub Release with all files attached.
 
 ## Build from source
@@ -585,8 +597,8 @@ credentials or recordings.
    git push -u origin main
    ```
 3. GitHub → **Actions** → *Build installers* → **Run workflow**.
-4. Windows ke liye `KG-TRF-Tool-Setup-5.9.8.exe`, Linux ke liye
-   `KG-TRF-Tool-5.9.8-x86_64.AppImage` download karo.
+4. Windows ke liye `KG-TRF-Tool-Setup-5.9.9.exe`, Linux ke liye
+   `KG-TRF-Tool-5.9.9-x86_64.AppImage` download karo.
 5. Linux par: `chmod +x KG-TRF-Tool-*.AppImage` phir double-click / run.
 6. Source se chalana ho to: `npm install` → `npx playwright install chromium`
    → `npm start`.

@@ -57,7 +57,7 @@ portable:
 linux:
   # .deb packages must declare a maintainer (electron-builder reads the
   # package.json author first; this is the explicit fallback/override).
-  maintainer: KG TRF Tool <support@trafficdrive.app>
+  maintainer: KG TRF Tool <kgmax99@gmail.com>
   target:
     - target: AppImage
       arch:

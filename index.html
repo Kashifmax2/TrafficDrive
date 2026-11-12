@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KG TRF Tool 5.9.8</title>
+<title>KG TRF Tool 5.9.9</title>
 <script>
 /* API base shim ------------------------------------------------------------
    The Electron app opens index.html over file:// and talks to the loopback
@@ -93,7 +93,7 @@ body.light-mode .rc-adonly-badge{color:#fff;}
 <button class="sb-toggle" onclick="toggleSb()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
 <div class="sb-overlay" onclick="toggleSb()"></div>
 <aside class="sb">
-  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.8</div></div></div>
+  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.9</div></div></div>
   <nav class="sb-nav">
     <div class="ni active" onclick="goPage('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span data-i18n="nav_dashboard">Dashboard</span></div>
     <div class="ni" onclick="goPage('campaigns',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg><span data-i18n="nav_campaigns">Campaigns</span><span class="ni-badge" id="campBadge">0</span></div>
@@ -922,9 +922,8 @@ body.light-mode .rc-adonly-badge{color:#fff;}
         <div class="ch"><div class="ci b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><span class="ct" data-i18n="support">Support</span></div>
         <div class="cb">
           <div style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:var(--r);cursor:pointer" onclick="window.open('https://github.com/TrafficDrive/docs','_blank')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><div><div style="font-size:13px;font-weight:500" data-i18n="documentation">Documentation</div><div style="font-size:11px;color:var(--t3)" data-i18n="doc_desc">Full user guide and API reference</div></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:var(--r);cursor:pointer" onclick="window.open('https://wa.me/923214485415','_blank')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><div><div style="font-size:13px;font-weight:500" data-i18n="whatsapp_support">WhatsApp Support</div><div style="font-size:11px;color:var(--t3)" data-i18n="whatsapp_desc">Chat with us on WhatsApp: +92 321 4485415</div></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:var(--r);cursor:pointer" onclick="openGmail()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div><div style="font-size:13px;font-weight:500" data-i18n="email_support">Email Support</div><div style="font-size:11px;color:var(--t3)">ngfnomii@gmail.com</div></div></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:var(--r);cursor:pointer" onclick="window.open('https://github.com/Kashifmax2/TrafficDrive/releases/latest','_blank')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><div><div style="font-size:13px;font-weight:500" data-i18n="documentation">Documentation</div><div style="font-size:11px;color:var(--t3)" data-i18n="doc_desc">Release notes, downloads and user guide</div></div></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:var(--r);cursor:pointer" onclick="openGmail()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div><div style="font-size:13px;font-weight:500" data-i18n="email_support">Email Support</div><div style="font-size:11px;color:var(--t3)">kgmax99@gmail.com</div></div></div>
           </div>
         </div>
       </div>
@@ -941,15 +940,15 @@ body.light-mode .rc-adonly-badge{color:#fff;}
     <div class="card" style="margin-top:14px">
       <div class="cb" style="text-align:center">
         <div style="font-size:13px;font-weight:600;color:var(--t1)" data-i18n="version_info">KG TRF Tool</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.8 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.7</span></div>
+        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.9 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.7</span></div>
         <div style="font-size:11px;color:var(--pl);margin-top:8px;padding:8px;background:var(--pdim);border-radius:6px;border:1px solid rgba(124,58,237,.3)">
-          KG TRF Tool · v5.9.8
+          KG TRF Tool · v5.9.9
         </div>
       </div>
     </div>
   </div></div>
 
-  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.8</div>
+  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.9</div>
 </main>
 
 <input type="hidden" id="internalLinkCount" value="3">
@@ -1840,7 +1839,7 @@ function getBrowserEngineData(){const sel=document.getElementById('browserEngine
 function addAutoLog(type,msg){const consoleEl=document.getElementById('autoLogs');if(!consoleEl)return;const tagMap={info:'INFO',success:'SUCCESS',error:'ERROR',warn:'WARNING'};const tag=tagMap[type]||'INFO';const cls=type==='success'?'success':type==='error'?'error':type==='warn'?'warn':'info';const row=`<div class="lr"><span class="lts">${ts()}</span><span class="ltag ${cls}">${tag}</span><span class="lmsg ${type==='success'||type==='error'||type==='warn'?cls:''}">${msg}</span></div>`;consoleEl.insertAdjacentHTML('beforeend',row);consoleEl.scrollTop=consoleEl.scrollHeight;}
 function clearAutomationLogs(){document.getElementById('autoLogs').innerHTML='<div class="lr"><span class="lts">[--:--:--]</span><span class="ltag info">INFO</span><span class="lmsg">'+t('logs_cleared')+'</span></div>';}
 function togFaq(el){el.classList.toggle('open');}
-function openGmail(){const {shell}=require('electron');shell.openExternal('https://mail.google.com/mail/?view=cm&fs=1&to=ngfnomii@gmail.com');}
+function openGmail(){const {shell}=require('electron');shell.openExternal('https://mail.google.com/mail/?view=cm&fs=1&to=kgmax99@gmail.com&su=KG%20TRF%20Tool%20Support');}
 
 let scrollSystemActive=false;let scrollSystemInstance=null;let scrollInterval=null;let scrollSystemActivationLogged=false;
 function toggleScrollSystem(desiredState){const toggle=document.getElementById('scrollSystemToggle');const statusText=document.getElementById('scrollStatusText');scrollSystemActive=(typeof desiredState==='boolean')?desiredState:!scrollSystemActive;scrollLinkSystemEnabled=scrollSystemActive;if(scrollSystemActive){toggle.classList.add('on');statusText.textContent=t('system_on');statusText.style.color='var(--grn)';if(!scrollSystemActivationLogged){const autoLogs=document.getElementById('autoLogs');if(autoLogs)autoLogs.innerHTML='';addAutoLog('success',t('scroll_system_activated'));scrollSystemActivationLogged=true;}startScrollSystem();}else{toggle.classList.remove('on');statusText.textContent=t('system_off');statusText.style.color='var(--t3)';scrollSystemActivationLogged=false;stopScrollSystem();}}

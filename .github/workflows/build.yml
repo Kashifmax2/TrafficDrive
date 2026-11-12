@@ -36,6 +36,9 @@ jobs:
       - name: Session diagnostics test
         run: npm run test:system
 
+      - name: Proxy rotation policy test
+        run: npm run test:rotation
+
       - name: Build NSIS + portable EXE
         run: npm run build:win
 
@@ -77,6 +80,9 @@ jobs:
 
       - name: Session diagnostics test
         run: xvfb-run -a npm run test:system
+
+      - name: Proxy rotation policy test
+        run: npm run test:rotation
 
       - name: Build AppImage + deb
         run: npm run build:linux
