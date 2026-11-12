@@ -17,7 +17,7 @@ const {
   installContextEgressGuard,
   verifyEgress,
 } = require('./EgressGuard.js');
-const { runWithProxyRetry } = require('./ProxyRotation.js');
+const { runWithProxyRetry, buildRotationPool, acquireRotationProxy, markProxyFailure, markProxySuccess } = require('./ProxyRotation.js');
 const { visitInternalLinks: visitLinks } = require('./LinkClicker.js');
 const { startRandomClicker } = require('./RandomClicker.js');
 const { chooseViewport, describeProfile, resolveSessionDevice, uaPlatform, uaBrands, uaChPlatform, physicalScreen } = require('./SessionProfile.js');
@@ -250,29 +250,37 @@ async function runDirectSession(config, emitter, sessionNum, browserTracker, isS
   let activeProxy = null;
   if (proxiesData && proxiesData.useProxies) {
     // Use proxies validated against the real campaign / ad target first, then
-    // the generic working list. Never fall back to the direct connection.
-    const working = Array.isArray(proxiesData.workingProxies) ? proxiesData.workingProxies : [];
-    const allProxies = Array.isArray(proxiesData.proxies) ? proxiesData.proxies : [];
-    const targetOkPool = working.filter(p => p && p.targetOk === true &&
-      (!proxiesData.checkUrl || !p.targetUrl || p.targetUrl === proxiesData.checkUrl));
-    const proxyPool = targetOkPool.length > 0
-      ? targetOkPool
-      : (working.length > 0 ? working : allProxies);
+    // the generic working list. Every pool is deduped by exit IP so two
+    // host:port entries behind the same IP never look like rotation.
+    const targetOkPool = (Array.isArray(proxiesData.workingProxies) ? proxiesData.workingProxies : [])
+      .filter(p => p && p.targetOk === true &&
+        (!proxiesData.checkUrl || !p.targetUrl || p.targetUrl === proxiesData.checkUrl));
+    const proxyPool = buildRotationPool(proxiesData);
 
     if (!proxyPool.length) {
       emitter.emit('log', `[Session ${sessionNum}] Proxy mode is ON but no proxy is available. Session aborted - direct-IP fallback is disabled.`, 'ERROR');
       return 'proxy_blocked';
     }
 
-    if (proxiesData.checkUrl && !targetOkPool.length && working.length) {
-      emitter.emit('log', `[Session ${sessionNum}] WARNING: no proxy is verified against ${proxiesData.checkUrl} - using the working pool. Validate the target once on the Proxies page for better ad acceptance.`, 'WARN');
+    if (proxiesData.checkUrl && !targetOkPool.length) {
+      emitter.emit('log', `[Session ${sessionNum}] WARNING: no proxy is verified against ${proxiesData.checkUrl} - rotating ${proxyPool.length} working exit(s). Validate the target once on the Proxies page for better ad acceptance.`, 'WARN');
     }
-    
+    emitter.emit('log', `[Session ${sessionNum}] Proxy rotation pool: ${proxyPool.length} distinct exit(s)`);
+
     if (proxyPool.length > 0) {
-      // Assign a proxy per session (round-robin through pool). __proxyOffset is
-      // bumped on every retry so a blocked proxy is replaced by the next one.
-      const proxyOffset = parseInt(config.__proxyOffset, 10) || 0;
-      assignedProxy = proxyPool[(sessionNum + proxyOffset) % proxyPool.length];
+      // The usage ledger hands every session a safe exit (never the same IP,
+      // never over the 12 h reuse cap). A blocked proxy is replaced by the next
+      // safe exit on retry.
+      const pickMeta = {};
+      assignedProxy = acquireRotationProxy(proxyPool, pickMeta);
+      if (!assignedProxy) {
+        const waitMin = Math.max(1, Math.ceil((pickMeta.waitMs || 0) / 60000));
+        emitter.emit('log', `[Session ${sessionNum}] All ${proxyPool.length} exit(s) reached the safety cap (${pickMeta.hardLimit || 5} uses per 12 h) or are cooling down. Next IP frees up in ~${waitMin} min. Session aborted - reusing an IP is blocked.`, 'ERROR');
+        return 'proxy_blocked';
+      }
+      if (pickMeta.tier >= 3) {
+        emitter.emit('log', `[Session ${sessionNum}] WARNING: this IP already had ${Math.max(0, (pickMeta.uses || 1) - 1)} use(s) in the last 12 h. No fresher exit is available, so it is the 4th/5th (last allowed) use. Add more proxies to stay safer.`, 'WARN');
+      }
 
       const ProxyHandler = require('./Proxyhandler.js');
       const ph = new ProxyHandler();
@@ -281,14 +289,19 @@ async function runDirectSession(config, emitter, sessionNum, browserTracker, isS
       // proxies so each thread gets its own rotating IP. Plain IP proxies are unaffected.
       let sessionProxy = ph.buildSessionProxy(assignedProxy, `t${sessionNum}`);
       // If this proxy cannot reach the campaign target (some providers block
-      // gambling/specific sites), automatically switch to the next proxy.
+      // gambling/specific sites), automatically switch to the next safe proxy.
       if (proxiesData.checkUrl && proxyPool.length > 0) {
         const maxTries = Math.min(proxyPool.length, 6);
         let reachOk = false;
         for (let t = 0; t < maxTries; t++) {
           const reach = await ph.testReachability(sessionProxy, proxiesData.checkUrl, 6000);
           if (reach.ok) { reachOk = true; break; }
-          const nextRaw = proxyPool[(sessionNum + proxyOffset + t + 1) % proxyPool.length];
+          markProxyFailure(sessionProxy, reach.reason);
+          const nextRaw = acquireRotationProxy(proxyPool);
+          if (!nextRaw) {
+            emitter.emit('log', `[Session ${sessionNum}] No safe proxy left after ${sessionProxy.host}:${sessionProxy.port} failed (${reach.reason}). Session aborted - direct-IP fallback is disabled.`, 'ERROR');
+            return 'proxy_blocked';
+          }
           const nextProxy = ph.buildSessionProxy(nextRaw, `t${sessionNum}`);
           emitter.emit('log', `[Session ${sessionNum}] Proxy ${sessionProxy.host}:${sessionProxy.port} cannot open ${proxiesData.checkUrl} (${reach.reason}) - switching to ${nextProxy.host}:${nextProxy.port}`, 'WARN');
           assignedProxy = nextRaw;
@@ -317,6 +330,8 @@ async function runDirectSession(config, emitter, sessionNum, browserTracker, isS
     try {
       proxyGeo = await resolveProxyGeo(activeProxy, { timeoutMs: 6000 });
       if (proxyGeo) {
+        // This exit answered through the proxy; clear any old failure streak.
+        markProxySuccess(activeProxy, { egressIp: proxyGeo.ip, country: proxyGeo.countryCode });
         emitter.emit(
           'log',
           `[Session ${sessionNum}] Proxy exit IP: ${proxyGeo.ip}${proxyGeo.city ? ' - ' + proxyGeo.city : ''}${proxyGeo.countryCode ? ', ' + proxyGeo.countryCode : ''} (${proxyGeo.timezone || 'timezone unknown'})`
@@ -720,6 +735,7 @@ async function runDirectSession(config, emitter, sessionNum, browserTracker, isS
       const errMsg = String((error && error.message) || '');
       if (proxyFailRef.failed || errMsg.startsWith('__PROXY_FAILED__')) {
         const code = proxyFailRef.code || errMsg.split(':')[1] || 'ERR_CONNECTION_FAILED';
+        markProxyFailure(activeProxy, code);
         emitter.emit(
           'log',
           `[Session ${sessionNum}] Site can't be reached (${code}) - closing and switching to another proxy`,
@@ -736,6 +752,7 @@ async function runDirectSession(config, emitter, sessionNum, browserTracker, isS
     const errMsg = String((err && err.message) || '');
     if (proxyFailRef.failed || errMsg.startsWith('__PROXY_FAILED__')) {
       const code = proxyFailRef.code || errMsg.split(':')[1] || 'ERR_CONNECTION_FAILED';
+      markProxyFailure(activeProxy, code);
       emitter.emit(
         'log',
         `[Session ${sessionNum}] Site can't be reached (${code}) - switching to another proxy`,

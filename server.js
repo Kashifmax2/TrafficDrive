@@ -40,6 +40,15 @@ const {
   physicalScreen,
 } = require('./SessionProfile.js');
 const { installPrivacyGuard, privacyContextOptions } = require('./PrivacyGuard.js');
+const {
+  configureProxyUsage,
+  dedupeProxyPool,
+  buildRotationPool,
+  acquireRotationProxy,
+  getProxyUsageSnapshot,
+  markProxyFailure,
+  markProxySuccess,
+} = require('./ProxyRotation.js');
 
 // --- Traffic modules -------------------------------------------------------
 // Lazy-loaded to avoid blocking startup
@@ -127,11 +136,16 @@ function scheduleProxiesSave() {
   }, 1500);
 }
 
-function recordProxyResult(key, r, targetUrl) {
+function recordProxyResult(key, r, targetUrl, opts = {}) {
   const entry = loadedProxies.find((p) => proxyStoreKey(p) === key);
   if (!entry) return;
   const ok = !!(r && r.ok);
-  entry.status = ok ? 'ok' : 'dead';
+  // A proxy can tunnel traffic perfectly and still be refused by one ad /
+  // campaign target ("Anonymous Proxy detected", 403, 5xx). That is a target
+  // result, not a dead proxy - marking the tunnel dead would shrink the
+  // rotation pool to nothing over a few runs.
+  const tunnelOk = typeof opts.tunnelOk === 'boolean' ? opts.tunnelOk : ok;
+  entry.status = tunnelOk ? 'ok' : 'dead';
   entry.reason = (r && r.reason) || (ok ? 'ok' : 'failed');
   entry.ms = r && typeof r.ms === 'number' ? r.ms : 0;
   if (r && r.egressIp) entry.egressIp = r.egressIp;
@@ -152,6 +166,11 @@ function recordProxyResult(key, r, targetUrl) {
 }
 
 loadProxiesFromDisk();
+
+// Persistent IP-usage ledger (5.9.8). It survives restarts so the same exit IP
+// is never quietly reused dozens of times in one 12 h window.
+const PROXY_USAGE_FILE = path.join(platform.appDataDir(), 'proxy-usage.json');
+configureProxyUsage({ file: PROXY_USAGE_FILE });
 
 let autoRestartEnabled = false;
 
@@ -214,10 +233,14 @@ const rpaPlayState = {
   proxyTarget: '',
   proxyPoolSize: 0,
   proxyVerifiedPoolSize: 0,
+  proxyRawPoolSize: 0,
+  proxyUniqueIps: [],
+  proxyUsage: null,
   proxyVerified: false,
   proxyEgress: '',
   proxySwitches: 0,
   proxyRetries: 0,
+  proxyPoolRef: null,
   currentAction: '',
   currentTab: '',
   currentUrl: '',
@@ -267,6 +290,12 @@ function rpaProxyRecord(p) {
     sessionSuffix: !!p.sessionSuffix,
     rotating: !!p.rotating,
     raw: p.raw || '',
+    // Kept so the rotation pool can dedupe by real exit IP and mix countries.
+    egressIp: p.egressIp || '',
+    countryCode: p.countryCode || p.country || '',
+    timezone: p.timezone || '',
+    status: p.status || '',
+    targetOk: !!p.targetOk,
   };
 }
 
@@ -278,18 +307,6 @@ function rpaWorkingPool() {
     .filter(p => p && p.host && p.port && p.status === 'ok')
     .map(rpaProxyRecord)
     .filter(Boolean);
-}
-
-function rpaPickRandomProxy(pool, excludeKey) {
-  if (!Array.isArray(pool) || !pool.length) return null;
-  if (pool.length === 1) return pool[0];
-  let candidate = pool[Math.floor(Math.random() * pool.length)];
-  let guard = 0;
-  while (excludeKey && proxiedKey(candidate) === excludeKey && guard < 8) {
-    candidate = pool[Math.floor(Math.random() * pool.length)];
-    guard++;
-  }
-  return candidate;
 }
 
 function rpaRecomputeRandomTotals() {
@@ -752,6 +769,13 @@ async function rpaReplayOnce(actions, opts) {
   }
 }
 
+// Reasons where the proxy tunnel works but the ad/site target refuses that IP.
+// These must NOT mark the proxy dead, otherwise the rotation pool would be
+// emptied by a few preflights against a strict ad network.
+function rpaProxyTargetRejected(reason) {
+  return ['proxy_detected', 'site_blocked', 'no_response', 'timeout'].includes(String(reason || '').toLowerCase());
+}
+
 // Preflight a proxy pool against the real target in a real Chromium context.
 // onlyTargetOk=true (browser validation) catches dead tunnels, MITM certs,
 // HTTP block pages ("Anonymous Proxy detected") and direct-IP leaks before the
@@ -786,7 +810,11 @@ async function rpaPreflightProxyPool(pool, targetUrl, opts = {}) {
         r = { ok: false, ms: 0, reason: 'browser_failed', error: (e && e.message) || String(e) };
       }
       checked[i] = { proxy: p, ok: !!r.ok, reason: r.reason || (r.ok ? 'ok' : 'failed'), result: r };
-      try { recordProxyResult(proxiedKey(p), r, targetUrl); } catch (_) {}
+      try {
+        recordProxyResult(proxiedKey(p), r, targetUrl, {
+          tunnelOk: !!r.ok || rpaProxyTargetRejected(r.reason),
+        });
+      } catch (_) {}
     }
   }
   try {
@@ -799,14 +827,55 @@ async function rpaPreflightProxyPool(pool, targetUrl, opts = {}) {
   return { checked: checked.filter(Boolean), verified, rejected, targetUrl, skipped };
 }
 
+// Resolve the real exit IP for pool entries whose egress is still unknown.
+// Deduping by host:port is not enough: different ports of the same provider
+// frequently share one IP, which is exactly the "same IP again" bug. These are
+// cheap HTTP checks through the proxy (no browser), capped so a big free list
+// cannot stall the replay.
+async function rpaResolvePoolEgress(pool, opts = {}) {
+  const { resolveProxyGeo } = require('./EgressGuard.js');
+  const timeoutMs = Math.max(3000, Math.min(10000, parseInt(opts.timeoutMs, 10) || 5000));
+  const concurrency = Math.max(1, Math.min(8, parseInt(opts.concurrency, 10) || 6));
+  const max = Math.max(0, Math.min(pool.length, parseInt(opts.max, 10) || 40));
+  const unknown = pool.filter(p => !String(p.egressIp || '').trim());
+  if (!unknown.length) return { resolved: 0, unknown: 0, checked: 0 };
+  const todo = unknown.slice(0, max);
+  let next = 0;
+  let resolved = 0;
+  async function worker() {
+    while (true) {
+      const idx = next++;
+      if (idx >= todo.length) return;
+      const p = todo[idx];
+      try {
+        const geo = await resolveProxyGeo(p, { timeoutMs });
+        if (geo && geo.ip) {
+          p.egressIp = geo.ip;
+          if (geo.countryCode) p.countryCode = geo.countryCode;
+          resolved++;
+          const key = proxyStoreKey(p);
+          const entry = loadedProxies.find(x => proxyStoreKey(x) === key);
+          if (entry) {
+            entry.egressIp = geo.ip;
+            if (geo.countryCode) entry.countryCode = geo.countryCode;
+            if (geo.timezone) entry.timezone = geo.timezone;
+            scheduleProxiesSave();
+          }
+        }
+      } catch (_) {}
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, todo.length) }, worker));
+  return { resolved, unknown: unknown.length, checked: todo.length };
+}
+
 // One session = one independent browser that repeats the recording `loop`
-// times. Multiple sessions run in parallel (the UI lets the user pick 1-10).
+// times. Multiple sessions run in parallel (the UI lets you pick 1-10).
 async function rpaPlaySessionWorker(actions, opts, sessionId) {
   const row = rpaSessionRow(sessionId);
   rpaPlayState.sessionStats.push(row);
   const tag = `S${sessionId}`;
   const mode = opts.proxyMode || 'none';
-  let lastKey = '';
 
   for (let i = 0; i < opts.loop; i++) {
     if (rpaPlayState.stopRequested) break;
@@ -814,21 +883,36 @@ async function rpaPlaySessionWorker(actions, opts, sessionId) {
     rpaPlayState.iteration = Math.max(rpaPlayState.iteration, i + 1);
     rpaPlayState.round = Math.max(rpaPlayState.round, i + 1);
 
-    // Pick the proxy for this round/session.
+    // Pick the proxy for this round/session from the shared rotation ledger.
+    // The ledger never returns an IP that already hit the 12 h reuse cap and
+    // never returns the same exit twice in a row, even across parallel
+    // sessions.
     let candidate = null;
+    let pickMeta = {};
     if (mode === 'fixed') {
       candidate = opts.proxyPool[0] || null;
     } else if (mode === 'random') {
-      candidate = opts.proxyRotation === 'session'
-        ? (opts.proxyPool[(sessionId - 1) % opts.proxyPool.length] || null)
-        : rpaPickRandomProxy(opts.proxyPool, lastKey);
+      if (opts.proxyRotation === 'session') {
+        if (!opts.sessionProxyMap) opts.sessionProxyMap = new Map();
+        if (!opts.sessionProxyMap.has(sessionId)) {
+          opts.sessionProxyMap.set(sessionId, acquireRotationProxy(opts.proxyPool, pickMeta));
+        }
+        candidate = opts.sessionProxyMap.get(sessionId) || null;
+      } else {
+        candidate = acquireRotationProxy(opts.proxyPool, pickMeta);
+      }
     }
     if (mode !== 'none' && !candidate) {
       row.failed++;
-      row.lastError = 'No verified proxy available for this round';
+      row.lastError = pickMeta && pickMeta.tier === 99
+        ? `IP reuse safety cap reached (${pickMeta.hardLimit} uses / 12 h per IP)`
+        : 'No safe proxy available for this round';
       rpaPlayState.lastError = row.lastError;
-      rpaPushLog(rpaPlayState, `[${tag}] Replay ${i + 1}/${opts.loop} skipped: ${row.lastError}`, 'error');
+      rpaPushLog(rpaPlayState, `[${tag}] Replay ${i + 1}/${opts.loop} skipped: ${row.lastError}. Add more proxies or wait - reusing an IP is blocked.`, 'error');
       break;
+    }
+    if (mode === 'random' && pickMeta && pickMeta.tier >= 3) {
+      rpaPushLog(rpaPlayState, `[${tag}] WARNING: this IP already had ${Math.max(0, (pickMeta.uses || 1) - 1)} use(s) in the last 12 h. It is the 4th/5th (last allowed) use - add more proxies to stay safer.`, 'warning');
     }
 
     const maxProxyAttempts = mode === 'random'
@@ -840,14 +924,21 @@ async function rpaPlaySessionWorker(actions, opts, sessionId) {
       if (rpaPlayState.stopRequested) break;
       let attemptProxy = candidate;
       if (attempt > 0) {
-        attemptProxy = rpaPickRandomProxy(opts.proxyPool, lastKey);
+        const retryMeta = {};
+        attemptProxy = acquireRotationProxy(opts.proxyPool, retryMeta);
+        if (!attemptProxy) {
+          row.failed++;
+          row.lastError = 'No safe proxy left for a retry (IP reuse cap reached)';
+          rpaPlayState.lastError = row.lastError;
+          rpaPushLog(rpaPlayState, `[${tag}] ${row.lastError}; stopping this round instead of reusing an IP.`, 'error');
+          break;
+        }
         row.retries++;
         row.proxySwitches++;
         rpaPlayState.proxyRetries++;
         rpaPlayState.proxySwitches++;
       }
       const proxyText = attemptProxy ? proxiedLabel(attemptProxy) : 'direct IP';
-      lastKey = attemptProxy ? proxiedKey(attemptProxy) : '';
       rpaPushLog(rpaPlayState, `[${tag}] Replay ${i + 1}/${opts.loop} started via ${proxyText}`, 'info');
       try {
         const uaForRound = rpaPickUserAgent(opts, i + 1);
@@ -882,6 +973,31 @@ async function rpaPlaySessionWorker(actions, opts, sessionId) {
             rpaPlayState.proxyLabel = info.proxyLabel;
             rpaPlayState.proxyEgress = info.proxyEgress;
             rpaPlayState.proxyVerified = !!info.proxyVerified;
+            // Show the rotation clearly: every round logs the exit IP the site
+            // actually sees, not just the proxy host:port.
+            rpaPushLog(
+              rpaPlayState,
+              `[${tag}] Round ${i + 1}/${opts.loop} exit IP: ${info.proxyEgress || 'unverified'}${info.proxyCountry ? ' (' + info.proxyCountry + ')' : ''} via ${info.proxyLabel}`,
+              info.proxyVerified ? 'info' : 'warn'
+            );
+            if (info.proxyEgress) {
+              if (!Array.isArray(rpaPlayState.proxyUniqueIps)) rpaPlayState.proxyUniqueIps = [];
+              if (!rpaPlayState.proxyUniqueIps.includes(info.proxyEgress)) {
+                rpaPlayState.proxyUniqueIps.push(info.proxyEgress);
+                if (rpaPlayState.proxyUniqueIps.length > 200) rpaPlayState.proxyUniqueIps.shift();
+              }
+              // Persist the proven exit so the next pool build dedupes by real IP.
+              try {
+                const key = proxyStoreKey(attemptProxy);
+                const entry = loadedProxies.find(p => proxyStoreKey(p) === key);
+                if (entry && entry.egressIp !== info.proxyEgress) {
+                  entry.egressIp = info.proxyEgress;
+                  if (info.proxyCountry) entry.countryCode = info.proxyCountry;
+                  scheduleProxiesSave();
+                }
+              } catch (_) {}
+              try { markProxySuccess(attemptProxy, { egressIp: info.proxyEgress, country: info.proxyCountry }); } catch (_) {}
+            }
             if (info.proxyRotating) {
               rpaPushLog(rpaPlayState, `[${tag}] Rotating proxy exit: ${info.proxyEgress}`, 'info');
             }
@@ -915,9 +1031,12 @@ async function rpaPlaySessionWorker(actions, opts, sessionId) {
         row.actionsDone = 0;
         row.actionsTotal = 0;
         const proxyFailure = !!attemptProxy && isProxyFailure(e);
+        if (proxyFailure) {
+          try { markProxyFailure(attemptProxy, msg); } catch (_) {}
+        }
         if (proxyFailure && attempt < maxProxyAttempts - 1) {
           row.lastError = msg;
-          rpaPushLog(rpaPlayState, `[${tag}] Proxy ${proxyText} failed: ${msg} - switching to the next verified proxy`, 'warn');
+          rpaPushLog(rpaPlayState, `[${tag}] Proxy ${proxyText} failed: ${msg} - switching to the next safe proxy`, 'warn');
           continue;
         }
         row.failed++;
@@ -963,6 +1082,9 @@ async function rpaPlayLoop(actions, opts) {
   rpaPlayState.proxyVerified = false;
   rpaPlayState.proxyPoolSize = 0;
   rpaPlayState.proxyVerifiedPoolSize = 0;
+  rpaPlayState.proxyRawPoolSize = 0;
+  rpaPlayState.proxyUniqueIps = [];
+  rpaPlayState.proxyUsage = null;
   rpaPlayState.proxySwitches = 0;
   rpaPlayState.proxyRetries = 0;
   rpaPlayState.currentAction = '';
@@ -988,58 +1110,107 @@ async function rpaPlayLoop(actions, opts) {
         rpaPushLog(rpaPlayState, 'Replay aborted: no proxy selected. Direct-IP fallback is disabled.', 'error');
         return;
       }
-      rpaPlayState.proxyPoolSize = rawPool.length;
-      rpaPlayState.proxyLabel = proxiedLabel(rawPool[0]);
-
-      if (opts.verifyProxy) {
+      // Resolve missing exit IPs first. Without this, two ports of the same
+      // provider look like two proxies while the site still sees one IP.
+      if (mode === 'random' && rawPool.length > 1) {
+        const unknownCount = rawPool.filter(p => !p.egressIp).length;
+        if (unknownCount) {
+          rpaPushLog(rpaPlayState, `Resolving exit IPs for ${unknownCount}/${rawPool.length} proxies before rotation (light HTTP checks, no browser)...`, 'info');
+          const eg = await rpaResolvePoolEgress(rawPool).catch(() => null);
+          if (eg) {
+            rpaPushLog(rpaPlayState, `Exit-IP lookup: ${eg.resolved}/${eg.checked} resolved${eg.unknown > eg.checked ? `, ${eg.unknown - eg.checked} still unknown` : ''}.`, eg.resolved ? 'success' : 'warn');
+          }
+        }
+      }
+      // 82 free-proxy entries often expose only a handful of real exit IPs.
+      // Dedupe by exit identity BEFORE preflight/rotation so "different proxy"
+      // really means "different IP".
+      const distinctPool = dedupeProxyPool(rawPool);
+      rpaPlayState.proxyRawPoolSize = rawPool.length;
+      rpaPlayState.proxyPoolSize = distinctPool.length;
+      rpaPlayState.proxyLabel = proxiedLabel(distinctPool[0]);
+      rpaPushLog(
+        rpaPlayState,
+        `Rotation pool: ${distinctPool.length} distinct exit IP(s) from ${rawPool.length} prox${rawPool.length === 1 ? 'y' : 'ies'}. Each round/session gets a different IP; an IP is capped at 5 uses per 12 h and spaced by ~20 min.`,
+        'info'
+      );
+      if (distinctPool.length < rawPool.length) {
         rpaPushLog(
           rpaPlayState,
-          `Preflight: checking ${rawPool.length} ${rawPool.length > 1 ? 'proxies' : 'proxy'} against the real target ${rpaPlayState.proxyTarget} in a browser...`,
+          `${rawPool.length - distinctPool.length} duplicate entr${rawPool.length - distinctPool.length === 1 ? 'y' : 'ies'} shared an exit IP and ${rawPool.length - distinctPool.length === 1 ? 'was' : 'were'} merged (using them would NOT have changed the IP).`,
           'info'
         );
-        const pre = await rpaPreflightProxyPool(rawPool, rpaPlayState.proxyTarget, {
-          timeoutMs: 20000,
-          maxCheck: opts.proxyMode === 'random' ? 8 : rawPool.length,
-          concurrency: 3,
+      }
+      if (distinctPool.length === 1) {
+        rpaPushLog(
+          rpaPlayState,
+          'Only 1 usable exit IP is configured, so rotation cannot be shown yet. Add more proxies (or a rotating residential endpoint) to rotate IPs between rounds.',
+          'warn'
+        );
+      }
+
+      if (opts.verifyProxy) {
+        // Preflight is a real-browser probe of the target. It is only used to
+        // ORDER the pool (accepted exits first); it must never shrink rotation
+        // down to the one or two proxies that happened to pass this probe.
+        const maxCheck = mode === 'random'
+          ? Math.max(1, Math.min(distinctPool.length, 12))
+          : distinctPool.length;
+        rpaPushLog(
+          rpaPlayState,
+          `Preflight: checking ${Math.min(maxCheck, distinctPool.length)} of ${distinctPool.length} distinct exit(s) against the real target ${rpaPlayState.proxyTarget} in a browser...`,
+          'info'
+        );
+        const pre = await rpaPreflightProxyPool(distinctPool, rpaPlayState.proxyTarget, {
+          timeoutMs: 15000,
+          maxCheck,
+          concurrency: 4,
         });
-        const okList = pre.verified;
+        const okList = dedupeProxyPool(pre.verified);
         rpaPlayState.proxyVerifiedPoolSize = okList.length;
         for (const bad of pre.rejected) {
           rpaPushLog(rpaPlayState, `Proxy ${proxiedLabel(bad.proxy)} rejected: ${bad.reason}`, 'warn');
         }
+        // Verified exits first, then every other distinct exit - the session
+        // egress guard still proves each one before it navigates.
+        const orderedPool = okList.concat(distinctPool.filter(p => !okList.includes(p)));
+        opts.verifiedPool = okList;
         if (!okList.length) {
-          // Do not abort the whole run when a preflight is unavailable: some ad
-          // targets block the probe itself. Continue with the raw pool; each
-          // session still verifies its own egress and rotates on failure.
-          opts.proxyPool = rawPool;
-          opts.verifiedPool = rawPool;
-          rpaPlayState.proxyVerifiedPoolSize = 0;
+          opts.proxyPool = distinctPool;
           rpaPlayState.lastError = 'Preflight could not confirm any proxy; continuing with per-session egress checks.';
           rpaPushLog(
             rpaPlayState,
-            `Preflight warning: no proxy passed the real-target check (${rpaPlayState.proxyTarget}). Continuing with ${rawPool.length} proxy candidate(s); each replay verifies its own exit IP and switches proxy on failure.`,
+            `Preflight warning: no proxy passed the real-target check (${rpaPlayState.proxyTarget}). Rotating all ${distinctPool.length} distinct exit(s); each replay verifies its own exit IP and switches proxy on failure.`,
             'warn'
           );
         } else {
-          if (mode === 'fixed' && !pre.checked[0].ok) {
+          if (mode === 'fixed' && pre.checked.length && pre.checked[0] && !pre.checked[0].ok) {
             rpaPlayState.lastError = `Selected proxy failed the real-target check (${pre.checked[0].reason}).`;
             rpaPushLog(rpaPlayState, `Preflight warning: ${rpaPlayState.lastError} Trying it anyway; the session will switch/stop if it really fails.`, 'warn');
           }
-          // Fixed mode keeps exactly its proxy. Random mode uses only verified
-          // proxies and rotates between them.
-          opts.proxyPool = mode === 'fixed' ? [rawPool[0]] : okList;
-          opts.verifiedPool = opts.proxyPool;
+          opts.proxyPool = mode === 'fixed' ? [rawPool[0]] : orderedPool;
           rpaPlayState.proxyLabel = proxiedLabel(opts.proxyPool[0]);
           rpaPushLog(
             rpaPlayState,
-            `Preflight complete: ${okList.length}/${pre.checked.length} proxies accepted by the target${pre.skipped ? ` (${pre.skipped} not checked)` : ''}.`,
+            `Preflight complete: ${okList.length}/${pre.checked.length} accepted by the target${pre.skipped ? ` (${pre.skipped} not probed)` : ''}. Rotation uses all ${opts.proxyPool.length} distinct exit(s), accepted ones first.`,
             'success'
           );
         }
       } else {
-        opts.proxyPool = rawPool;
-        opts.verifiedPool = rawPool;
+        opts.proxyPool = distinctPool;
+        opts.verifiedPool = distinctPool;
         rpaPushLog(rpaPlayState, 'Proxy preflight disabled. Egress leak protection is also disabled for this run.', 'warn');
+      }
+      rpaPlayState.proxyPoolSize = opts.proxyPool.length;
+      rpaPlayState.proxyPoolRef = opts.proxyPool;
+      if (mode === 'random') {
+        const capacity = getProxyUsageSnapshot(opts.proxyPool);
+        rpaPlayState.proxyUsage = capacity;
+        rpaPushLog(
+          rpaPlayState,
+          `Safe rotation capacity: ${capacity.available}/${capacity.poolSize} exit(s) available now · ${capacity.safeCapacity} session(s) before the ${capacity.windowHours} h cap${capacity.cooling ? ` · ${capacity.cooling} cooling down` : ''}${capacity.capped ? ` · ${capacity.capped} capped` : ''}.`,
+          capacity.available > 0 ? 'info' : 'warn'
+        );
       }
     }
 
@@ -2313,7 +2484,14 @@ async function handleRequest(req, res) {
       else if (p && p.status === 'dead') summary.dead++;
       else summary.unknown++;
     }
-    sendJSON(res, 200, { success: true, proxies: loadedProxies, summary });
+    // Distinct exit IPs + how many safe sessions the 12 h policy still allows.
+    try {
+      const okPool = loadedProxies.filter(p => p && p.status === 'ok');
+      const pool = buildRotationPool({ workingProxies: okPool, proxies: loadedProxies });
+      summary.distinctExits = pool.length;
+      summary.rotation = getProxyUsageSnapshot(pool);
+    } catch (_) {}
+    sendJSON(res, 200, { success: true, proxies: loadedProxies, summary, rotation: summary.rotation || null });
     return;
   }
 
@@ -2754,7 +2932,7 @@ async function handleRequest(req, res) {
     const proxyName = proxyMode === 'none'
       ? ''
       : (proxyMode === 'random'
-        ? `random (${proxyPool.length} working proxies)`
+        ? `random (${dedupeProxyPool(proxyPool).length} distinct-IP proxies)`
         : (rawProxy ? `${rawProxy.host}:${rawProxy.port}` : ''));
     // Verify the selected proxy in a real Chromium context before replaying.
     const verifyProxy = body.verifyProxy !== false;
@@ -2812,7 +2990,7 @@ async function handleRequest(req, res) {
       verifyProxy,
       proxy: proxyName,
       proxyMode,
-      proxyPoolSize: proxyPool.length,
+      proxyPoolSize: dedupeProxyPool(proxyPool).length,
       randomClicks: !!(randomCfg && randomCfg.enabled),
       trafficSource: trafficCfg ? trafficCfg.mode : '',
     });
@@ -2860,6 +3038,12 @@ async function handleRequest(req, res) {
         proxyTarget: rpaPlayState.proxyTarget,
         proxyPoolSize: rpaPlayState.proxyPoolSize,
         proxyVerifiedPoolSize: rpaPlayState.proxyVerifiedPoolSize,
+        proxyRawPoolSize: rpaPlayState.proxyRawPoolSize,
+        proxyUniqueIpCount: (rpaPlayState.proxyUniqueIps || []).length,
+        proxyRecentIps: (rpaPlayState.proxyUniqueIps || []).slice(-8),
+        proxyUsage: rpaPlayState.proxyMode === 'none'
+          ? null
+          : getProxyUsageSnapshot(rpaPlayState.proxyPoolRef || []),
         proxyVerified: rpaPlayState.proxyVerified,
         proxyEgress: rpaPlayState.proxyEgress,
         proxySwitches: rpaPlayState.proxySwitches,

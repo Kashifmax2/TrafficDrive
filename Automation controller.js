@@ -326,13 +326,15 @@
     rpaSetText('rpa-mon-actions', String(p.actionsCompleted || 0) + ' / ' + String(p.totalExpectedActions || ((totalRounds) * (p.totalActions || 0))));
     rpaSetText('rpa-mon-clicks', String(p.randomClicks || 0));
     rpaSetText('rpa-mon-active', String(p.activeSessions || 0) + ' / ' + String(p.sessions || 1));
-    rpaSetText('rpa-mon-proxy', mode === 'none' ? 'DIRECT IP' : (p.proxyLabel || mode));
+    rpaSetText('rpa-mon-proxy', mode === 'none' ? 'DIRECT IP' : ((p.proxyLabel || mode) + (p.proxyPoolSize ? ' · ' + p.proxyPoolSize + ' exits' : '')));
     const verified = mode === 'none'
       ? 'no proxy'
-      : (p.proxyVerified ? 'verified ✓' : (p.proxyVerifiedPoolSize ? (p.proxyVerifiedPoolSize + ' verified') : 'pending'));
+      : ((p.proxyUniqueIpCount || 0) + ' unique IPs used · ' +
+        (p.proxyVerifiedPoolSize || 0) + '/' + (p.proxyPoolSize || 0) + ' preflight-OK');
     rpaSetText('rpa-mon-verified', verified);
     rpaSetText('rpa-mon-egress', p.proxyEgress ? ('exit ' + p.proxyEgress) : (mode === 'none' ? 'PC IP' : '—'));
-    rpaSetText('rpa-mon-switches', String(p.proxySwitches || 0));
+    rpaSetText('rpa-mon-switches', String(p.proxySwitches || 0) +
+      (p.proxyUsage ? ' · ' + (p.proxyUsage.available || 0) + ' safe / ' + (p.proxyUsage.capped || 0) + ' capped' : ''));
     rpaSetText('rpa-mon-current', p.running
       ? ((p.currentAction ? p.currentAction : 'starting') + (p.currentTab ? ' · tab ' + p.currentTab : ''))
       : (p.running === false && p.startedAt ? 'finished' : 'idle'));
