@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KG TRF Tool 5.9.10</title>
+<title>KG TRF Tool 5.9.11</title>
 <script>
 /* API base shim ------------------------------------------------------------
    The Electron app opens index.html over file:// and talks to the loopback
@@ -93,7 +93,7 @@ body.light-mode .rc-adonly-badge{color:#fff;}
 <button class="sb-toggle" onclick="toggleSb()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
 <div class="sb-overlay" onclick="toggleSb()"></div>
 <aside class="sb">
-  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.10</div></div></div>
+  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.11</div></div></div>
   <nav class="sb-nav">
     <div class="ni active" onclick="goPage('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span data-i18n="nav_dashboard">Dashboard</span></div>
     <div class="ni" onclick="goPage('campaigns',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg><span data-i18n="nav_campaigns">Campaigns</span><span class="ni-badge" id="campBadge">0</span></div>
@@ -266,10 +266,10 @@ body.light-mode .rc-adonly-badge{color:#fff;}
         <div class="ch"><div class="ci p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><span class="ct" data-i18n="import_proxies">Import Proxies</span></div>
         <div class="cb">
           <div class="f"><label class="fl" data-i18n="paste_proxy_list">Paste Proxy List</label><textarea id="px-input" rows="8" style="font-family:var(--mono);font-size:12px" placeholder="Format: IP:PORT&#10;Or: IP:PORT:USER:PASS&#10;One per line" data-i18n-ph="ph_proxy_fmt"></textarea></div>
-          <div class="f"><label class="fl" data-i18n="proxy_type">Proxy Type</label><select id="px-type"><option data-i18n="opt_http">HTTP</option><option data-i18n="opt_https">HTTPS</option><option data-i18n="opt_socks4">SOCKS4</option><option data-i18n="opt_socks5">SOCKS5</option></select></div>
+          <div class="f"><label class="fl" data-i18n="proxy_type">Proxy Type</label><select id="px-type"><option data-i18n="opt_http">HTTP</option><option data-i18n="opt_https">HTTPS</option><option data-i18n="opt_socks4">SOCKS4</option><option data-i18n="opt_socks5">SOCKS5</option></select><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px"><span style="color:var(--t3);font-size:11px">Type sirf naye paste kiye gaye lines par lagta hai.</span><button class="btn btn-o" onclick="pxApplyTypeToAll()" style="padding:4px 10px;font-size:11px">Apply to all loaded</button></div></div>
           <div class="f"><label class="fl">Test URL (optional)</label><input type="text" id="px-test-url" placeholder="https://your-site.com — proxies ko is site ke against check kiya jayega"></div>
           <div class="f" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="px-real-browser" checked style="width:16px;height:16px;accent-color:var(--grn)"><label class="fl" for="px-real-browser" style="margin:0;cursor:pointer">Real browser check <span style="color:var(--t3);font-weight:400">(recommended — opens Chromium through each proxy, only truly usable proxies pass)</span></label></div>
-          <div class="hint" style="margin-bottom:8px">Agar target site "Anonymous Proxy detected / VPN detected" page dikhaye to woh proxy <b>Site Detected Proxy</b> mark hogi aur campaigns mein use nahi hogi. Yeh site ki IP-reputation block hai — free/datacenter proxies par aam hai; residential/ISP proxy ya doosra working proxy use karein.</div>
+          <div class="hint" style="margin-bottom:8px">Slow free proxies ko 20–30 s tak time diya jata hai, is liye fast re-run par working proxies dead nahi hoti. Agar target site "Anonymous Proxy detected / VPN detected" page dikhaye to tunnel phir bhi OK hai — proxy <b>Verified</b> rahegi (tooltip: target site ne is IP ko block kiya) aur campaigns mein use ho sakti hai. Sirf woh proxies dead hoti hain jo do baar lagataar timeout/connection fail karein.</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="loadProxies()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg><span data-i18n="load_proxies">Load Proxies</span></button><button class="btn btn-g" onclick="scrapeProxies()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="scrape_proxies">Scrape Proxies</span></button><button class="btn btn-o" onclick="validateAllPx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="validate_all">Validate All</span></button><button class="btn btn-o" onclick="removeDeadProxies()" style="color:var(--red);border-color:rgba(248,81,73,.45)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg><span>Remove Dead</span></button><button class="btn btn-o" onclick="removeProxiesByStatus('ok')" title="Remove every proxy with a verified/working status" style="color:var(--grn);border-color:rgba(63,185,80,.45)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 12l2 2 4-4"/></svg><span>Remove All Verified Proxies</span></button><button class="btn btn-o" onclick="removeProxiesByStatus('unknown')" title="Remove every proxy that has not been validated yet" style="color:var(--ylw);border-color:rgba(210,153,34,.45)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg><span>Remove All Loaded Proxies</span></button><button class="btn btn-danger" onclick="clearProxies()" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span data-i18n="clear">Clear</span></button></div>
         </div>
       </div>
@@ -940,15 +940,15 @@ body.light-mode .rc-adonly-badge{color:#fff;}
     <div class="card" style="margin-top:14px">
       <div class="cb" style="text-align:center">
         <div style="font-size:13px;font-weight:600;color:var(--t1)" data-i18n="version_info">KG TRF Tool</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.10 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.10</span></div>
+        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.11 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.11</span></div>
         <div style="font-size:11px;color:var(--pl);margin-top:8px;padding:8px;background:var(--pdim);border-radius:6px;border:1px solid rgba(124,58,237,.3)">
-          KG TRF Tool · v5.9.10
+          KG TRF Tool · v5.9.11
         </div>
       </div>
     </div>
   </div></div>
 
-  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.10</div>
+  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.11</div>
 </main>
 
 <input type="hidden" id="internalLinkCount" value="3">
@@ -1654,7 +1654,7 @@ async function ensureWorkingProxies(list){
   for(let b=0;b<maxBatches&&queue.length;b++){
     const sample=queue.splice(0,Math.min(batchSize,queue.length));
     try{
-      const r=await fetch('http://localhost:3000/api/proxies/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({proxies:sample,mode:'browser',timeoutMs:15000,concurrency:6,targetUrl:target})});
+      const r=await fetch('http://localhost:3000/api/proxies/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({proxies:sample,mode:'browser',timeoutMs:30000,concurrency:4,targetUrl:target})});
       const d=await r.json();
       working+=((d&&d.working)||0);checked+=sample.length;
       addLog(((d&&d.working)?'success':'warn'),'Proxy check: '+working+' working / '+checked+' checked');
@@ -1711,7 +1711,7 @@ async function ensureWorkingProxies(list){
     const type=((row.children[1]&&row.children[1].textContent)||'http').trim().toLowerCase();
     return pxParseLine(raw,type);
   }
-  function renderProxyList(proxies){const tbody=document.getElementById('px-table');if(!tbody)return;const totalEl=document.getElementById('px-total'),workingEl=document.getElementById('px-working'),deadEl=document.getElementById('px-dead'),speedEl=document.getElementById('px-speed');const clean=[],seen=new Set();(Array.isArray(proxies)?proxies:[]).forEach(p=>{if(!pxIsValidProxy(p))return;const n=pxNormalizeProxy(p);const key=pxKeyOf(n);if(seen.has(key))return;seen.add(key);n.status=p.status==='ok'?'ok':(p.status==='dead'?'dead':'unknown');n.reason=(p&&p.reason)||'';n.ms=p&&typeof p.ms==='number'?p.ms:0;clean.push(n);});if(!clean.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:24px">'+pxEsc(t('no_proxies'))+'</td></tr>';if(totalEl)totalEl.textContent='0';if(workingEl)workingEl.textContent='0';if(deadEl)deadEl.textContent='0';if(speedEl)speedEl.textContent='—';pxUpdateRotationInfo();return;}const rank=s=>s==='ok'?0:(s==='dead'?2:1);clean.sort((a,b)=>rank(a.status)-rank(b.status));const frag=document.createDocumentFragment();let okN=0,deadN=0,sum=0,cnt=0;clean.forEach(p=>{const row=document.createElement('tr');row.dataset.key=pxKeyOf(p);row._px=p;let speedTxt='—',statusHtml='';if(p.status==='ok'){okN++;if(p.ms>0){speedTxt=p.ms;sum+=p.ms;cnt++;}statusHtml='<span class="badge ok" title="'+pxEsc(p.reason||'ok')+'">'+pxEsc(pxStatusLabel('px_verified','Verified'))+'</span>';}else if(p.status==='dead'){deadN++;statusHtml='<span class="badge dead" title="'+pxEsc(p.reason||'failed')+'">'+pxEsc(pxReasonLabel(p.reason||'failed'))+'</span>';}else{statusHtml='<span class="badge check" title="'+pxEsc('Not validated yet')+'">'+pxEsc(pxStatusLabel('px_status_loaded','Loaded'))+'</span>';}row.innerHTML='<td>'+pxEsc(p.raw)+'</td><td>'+pxEsc(p.type.toUpperCase())+'</td><td>'+speedTxt+'</td><td>'+statusHtml+'</td>'+PX_DEL_CELL;frag.appendChild(row);});tbody.innerHTML='';tbody.appendChild(frag);if(totalEl)totalEl.textContent=clean.length;if(workingEl)workingEl.textContent=okN;if(deadEl)deadEl.textContent=deadN;if(speedEl)speedEl.textContent=cnt?Math.round(sum/cnt):'—';pxUpdateRotationInfo();}
+  function renderProxyList(proxies){const tbody=document.getElementById('px-table');if(!tbody)return;const totalEl=document.getElementById('px-total'),workingEl=document.getElementById('px-working'),deadEl=document.getElementById('px-dead'),speedEl=document.getElementById('px-speed');const clean=[],seen=new Set();(Array.isArray(proxies)?proxies:[]).forEach(p=>{if(!pxIsValidProxy(p))return;const n=pxNormalizeProxy(p);const key=pxKeyOf(n);if(seen.has(key))return;seen.add(key);n.status=p.status==='ok'?'ok':(p.status==='dead'?'dead':'unknown');n.reason=(p&&p.reason)||'';n.ms=p&&typeof p.ms==='number'?p.ms:0;n.flaky=!!(p&&p.flaky);n.targetBlocked=!!(p&&p.targetBlocked);n.softFails=(p&&p.softFails)||0;clean.push(n);});if(!clean.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:24px">'+pxEsc(t('no_proxies'))+'</td></tr>';if(totalEl)totalEl.textContent='0';if(workingEl)workingEl.textContent='0';if(deadEl)deadEl.textContent='0';if(speedEl)speedEl.textContent='—';pxUpdateRotationInfo();return;}const rank=s=>s==='ok'?0:(s==='dead'?2:1);clean.sort((a,b)=>rank(a.status)-rank(b.status));const frag=document.createDocumentFragment();let okN=0,deadN=0,sum=0,cnt=0;clean.forEach(p=>{const row=document.createElement('tr');row.dataset.key=pxKeyOf(p);row._px=p;let speedTxt='—',statusHtml='';if(p.status==='ok'){okN++;if(p.ms>0&&!p.flaky){speedTxt=p.ms;sum+=p.ms;cnt++;}let okTitle=p.reason||'ok';if(p.targetBlocked)okTitle='Tunnel OK — target site blocked this IP ('+(p.reason||'site_blocked')+'). Proxy usable hai.';else if(p.flaky)okTitle='Verified earlier; last check failed ('+(p.reason||'timeout')+') — pool mein rakha gaya.';statusHtml='<span class="badge ok" title="'+pxEsc(okTitle)+'">'+pxEsc(pxStatusLabel('px_verified','Verified'))+'</span>';}else if(p.status==='dead'){deadN++;statusHtml='<span class="badge dead" title="'+pxEsc(p.reason||'failed')+'">'+pxEsc(pxReasonLabel(p.reason||'failed'))+'</span>';}else{statusHtml='<span class="badge check" title="'+pxEsc('Not validated yet')+'">'+pxEsc(pxStatusLabel('px_status_loaded','Loaded'))+'</span>';}row.innerHTML='<td>'+pxEsc(p.raw)+'</td><td>'+pxEsc(p.type.toUpperCase())+'</td><td>'+speedTxt+'</td><td>'+statusHtml+'</td>'+PX_DEL_CELL;frag.appendChild(row);});tbody.innerHTML='';tbody.appendChild(frag);if(totalEl)totalEl.textContent=clean.length;if(workingEl)workingEl.textContent=okN;if(deadEl)deadEl.textContent=deadN;if(speedEl)speedEl.textContent=cnt?Math.round(sum/cnt):'—';pxUpdateRotationInfo();}
   async function restoreProxies(){try{const proxies=await fetchLoadedProxies();renderProxyList(proxies||[]);const input=document.getElementById('px-input');if(input&&!input.value.trim()&&proxies&&proxies.length){input.value=proxies.filter(pxIsValidProxy).map(p=>p.raw||(p.host+':'+p.port)).join('\n');}try{const savedTest=localStorage.getItem('proxyTestUrl');const ti=document.getElementById('px-test-url');if(ti&&savedTest)ti.value=savedTest;const rb=document.getElementById('px-real-browser');if(rb&&localStorage.getItem('proxyRealBrowser')==='0')rb.checked=false;if(rb&&!rb.dataset.bound){rb.dataset.bound='1';rb.addEventListener('change',()=>{try{localStorage.setItem('proxyRealBrowser',rb.checked?'1':'0');}catch(e){}});}try{const savedType=localStorage.getItem('proxyType');if(savedType){const sel=document.getElementById('px-type');if(sel)sel.value=savedType;}}catch(e){}}catch(e){}}catch(e){}}
 
 function startCamp(){startCampRunner();}
@@ -1857,7 +1857,51 @@ function getCategoryLogo(category){
     if(job){try{fetch('http://localhost:3000/api/proxies/validate/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job})}).catch(()=>{});}catch(e){}}
     pxSetProgress('');
   }
-  function pxApplyResult(row,item,st){const reason=item.reason||(item.ok?'ok':'failed');st.reasons[reason]=(st.reasons[reason]||0)+1;const speedCell=row.children[2],statusCell=row.children[3];if(item.ok){st.working++;if(statusCell)statusCell.innerHTML='<span class="badge ok" title="'+pxEsc(reason)+'">'+pxEsc(pxStatusLabel('px_verified','Verified'))+'</span>';if(speedCell){if(typeof item.ms==='number'&&item.ms>0){speedCell.textContent=item.ms;st.sumMs+=item.ms;st.countMs++;}else{speedCell.textContent='—';}}}else{st.dead++;if(speedCell)speedCell.textContent='—';if(statusCell)statusCell.innerHTML='<span class="badge dead" title="'+pxEsc(reason)+'">'+pxEsc(pxReasonLabel(reason))+'</span>';}}
+  function pxApplyResult(row,item,st){
+    const reason=item.reason||(item.ok?'ok':'failed');
+    st.reasons[reason]=(st.reasons[reason]||0)+1;
+    const speedCell=row.children[2],statusCell=row.children[3];
+    const status=item.status==='ok'?'ok':(item.status==='dead'?'dead':'unknown');
+    // A check that our own browser/job could not complete must not change the
+    // row: keep exactly what was there before.
+    if(item.skipped){
+      st.skipped++;
+      const tip='Check skipped — browser/job issue ('+pxEsc(reason)+'). Previous status rakha gaya.';
+      if(status==='ok'){
+        st.working++;
+        if(statusCell)statusCell.innerHTML='<span class="badge ok" title="'+tip+'">'+pxEsc(pxStatusLabel('px_verified','Verified'))+'</span>';
+      }else if(status==='dead'){
+        st.dead++;
+        if(statusCell)statusCell.innerHTML='<span class="badge dead" title="'+tip+'">'+pxEsc(pxReasonLabel(reason))+'</span>';
+      }else if(statusCell){
+        statusCell.innerHTML='<span class="badge check" title="'+tip+'">'+pxEsc(pxStatusLabel('px_status_loaded','Loaded'))+'</span>';
+      }
+      return;
+    }
+    if(status==='ok'){
+      st.working++;
+      let title=pxEsc(reason);
+      if(item.targetBlocked){
+        st.targetBlocked++;
+        title='Tunnel OK — target site blocked this IP ('+pxEsc(reason)+'). Proxy abhi bhi usable hai.';
+      }else if(item.flaky||reason!=='ok'){
+        st.flaky++;
+        title='Verified earlier; last check failed ('+pxEsc(reason)+') — pool mein rakha gaya, agli check par dobara verify hoga.';
+      }
+      if(statusCell)statusCell.innerHTML='<span class="badge ok" title="'+title+'">'+pxEsc(pxStatusLabel('px_verified','Verified'))+'</span>';
+      if(speedCell){
+        if(!item.flaky&&typeof item.ms==='number'&&item.ms>0){speedCell.textContent=item.ms;st.sumMs+=item.ms;st.countMs++;}
+        else speedCell.textContent='—';
+      }
+    }else if(status==='dead'){
+      st.dead++;
+      if(speedCell)speedCell.textContent='—';
+      if(statusCell)statusCell.innerHTML='<span class="badge dead" title="'+pxEsc(reason)+'">'+pxEsc(pxReasonLabel(reason))+'</span>';
+    }else{
+      if(speedCell)speedCell.textContent='—';
+      if(statusCell)statusCell.innerHTML='<span class="badge check" title="'+pxEsc(reason)+'">'+pxEsc(pxStatusLabel('px_status_loaded','Loaded'))+'</span>';
+    }
+  }
   function pxRenderCounters(st,total){const w=document.getElementById('px-working'),d=document.getElementById('px-dead'),tt=document.getElementById('px-total'),sp=document.getElementById('px-speed');if(w)w.textContent=st.working;if(d)d.textContent=st.dead;if(tt)tt.textContent=total;if(sp)sp.textContent=st.countMs?Math.round(st.sumMs/st.countMs):'—';}
   async function pxFinishValidation(st,total,autoRemove){
     pxValidateRunning=false;
@@ -1866,13 +1910,18 @@ function getCategoryLogo(category){
     if(!autoRemove)pxRenderCounters(st,total);
     const elapsed=Math.max(0,Math.round((Date.now()-st.start)/1000));
     const reasonText=Object.keys(st.reasons).filter(k=>k!=='ok').map(k=>k+': '+st.reasons[k]).join(', ');
-    pxSetProgress(st.applied+' / '+total+' ('+elapsed+'s) — '+t('successful')+' '+st.working+', '+t('failed')+' '+st.dead);
+    const extra=[];
+    if(st.targetBlocked)extra.push('target-blocked (tunnel OK): '+st.targetBlocked);
+    if(st.flaky)extra.push('kept verified after one slow fail: '+st.flaky);
+    if(st.skipped)extra.push('skipped (browser/job): '+st.skipped);
+    const extraText=extra.length?' — '+extra.join(', '):'';
+    pxSetProgress(st.applied+' / '+total+' ('+elapsed+'s) — '+t('successful')+' '+st.working+', '+t('failed')+' '+st.dead+extraText);
     if(autoRemove){
       refreshProxyCounters();
       if(st.removeKeys.length){try{await pxServerTask(()=>fetch('http://localhost:3000/api/proxies/remove-dead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keys:st.removeKeys})}).then(r=>r.json()));}catch(e){}}
-      addLog('success','Removed '+st.removed+' dead proxies in '+elapsed+'s — working kept: '+st.working+(reasonText?' ('+reasonText+')':''));
+      addLog('success','Removed '+st.removed+' dead proxies in '+elapsed+'s — working kept: '+st.working+extraText+(reasonText?' ('+reasonText+')':''));
     }else{
-      addLog('success',t('validation_complete')+': '+t('successful')+' '+st.working+', '+t('failed')+' '+st.dead+(reasonText?' ('+reasonText+')':''));
+      addLog('success',t('validation_complete')+': '+t('successful')+' '+st.working+', '+t('failed')+' '+st.dead+extraText+(reasonText?' ('+reasonText+')':''));
       if(!st.applied&&total>0)addLog('warn','Validation finished but no per-proxy results were received — reloading the saved statuses from the server.');
       pxUpdateRotationInfo();
     }
@@ -1889,14 +1938,14 @@ function getCategoryLogo(category){
     trs.forEach(row=>{const p=pxRowToProxy(row);if(!p)return;const key=pxKeyOf(p);row.dataset.key=key;if(seen.has(key))return;seen.add(key);rowMap.set(key,row);payload.push({type:p.type,host:p.host,port:p.port,username:p.username||null,password:p.password||null,raw:p.raw||(p.host+':'+p.port)});});
     if(!payload.length){addLog('warn','No valid proxies in the table — use IP:PORT or IP:PORT:USER:PASS formats.');return;}
     if(!autoRemove){trs.forEach(row=>{if(row.children[2]&&row.children[3]){row.children[2].textContent='—';row.children[3].innerHTML='<span class="badge" title="'+pxEsc('Checking')+'">'+pxEsc(pxStatusLabel('px_status_checking','Checking…'))+'</span>';}});}
-    const st={working:0,dead:0,sumMs:0,countMs:0,reasons:{},applied:0,removed:0,removeKeys:[],start:Date.now(),lastResultAt:Date.now()};
+    const st={working:0,dead:0,sumMs:0,countMs:0,reasons:{},applied:0,removed:0,removeKeys:[],start:Date.now(),lastResultAt:Date.now(),targetBlocked:0,flaky:0,skipped:0};
     const epoch=++pxValidateEpoch;
     pxValidateRunning=true;
     try{localStorage.setItem('proxyTestUrl',((document.getElementById('px-test-url')||{}).value||'').trim());}catch(e){}
     pxSetProgress('0 / '+payload.length);
     const mode=((document.getElementById('px-real-browser')||{}).checked?'browser':'reachability');
     try{
-      const data=await pxFetchJson('http://localhost:3000/api/proxies/validate/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({targetUrl:((document.getElementById('px-test-url')||{}).value||'').trim(),mode,proxies:payload,concurrency:mode==='browser'?6:12,timeoutMs:mode==='browser'?15000:5000})},20000);
+      const data=await pxFetchJson('http://localhost:3000/api/proxies/validate/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({targetUrl:((document.getElementById('px-test-url')||{}).value||'').trim(),mode,proxies:payload,concurrency:mode==='browser'?4:8,timeoutMs:mode==='browser'?30000:20000})},30000);
       if(!data||!data.success||!data.jobId)throw new Error((data&&data.error)||t('proxy_validation_failed'));
       if(epoch!==pxValidateEpoch)return;
       pxValidateJobId=data.jobId;
@@ -1915,7 +1964,7 @@ function getCategoryLogo(category){
         if(!p||!p.success)throw new Error('validation job lost — is the backend still running?');
         if(p.error)throw new Error(p.error);
         if(Array.isArray(p.results)&&p.results.length){
-          p.results.forEach(item=>{const row=rowMap.get(item.key);if(!row)return;st.applied++;st.lastResultAt=Date.now();pxApplyResult(row,item,st);if(autoRemove&&!item.ok){row.remove();st.removed++;st.removeKeys.push(item.key);}});
+          p.results.forEach(item=>{const row=rowMap.get(item.key);if(!row)return;st.applied++;st.lastResultAt=Date.now();pxApplyResult(row,item,st);if(autoRemove&&item.status==='dead'){row.remove();st.removed++;st.removeKeys.push(item.key);}});
           from+=p.results.length;
           if(autoRemove)refreshProxyCounters();else pxRenderCounters(st,total);
           const elapsed=Math.max(0,Math.round((Date.now()-st.start)/1000));
@@ -1956,6 +2005,28 @@ function getCategoryLogo(category){
       else addLog('warn','Could not remove '+label+' proxies from the backend.');
     }catch(e){addLog('error','Removed from the table, but the backend could not be updated: '+(e&&e.message?e.message:'network error'));}
     pxUpdateRotationInfo();
+  }
+  // The "Proxy Type" dropdown only labels lines pasted afterwards. This
+  // re-labels the entire loaded list and clears validation status, because a
+  // result proven with HTTP says nothing about the same host used as SOCKS5.
+  async function pxApplyTypeToAll(){
+    if(pxValidateRunning){addLog('warn','Validation is running — wait for it to finish before changing the proxy type.');return;}
+    const sel=document.getElementById('px-type');
+    const type=String((sel&&sel.value)||'http').toLowerCase();
+    const tbody=document.getElementById('px-table');
+    const rows=tbody?[...tbody.querySelectorAll('tr')].filter(r=>r.dataset&&r.dataset.key):[];
+    if(!rows.length){addLog('warn','No proxies loaded — paste or load proxies first.');return;}
+    if(!confirm('Set all '+rows.length+' proxies to '+type.toUpperCase()+' and reset their validation status?\n\nValidation result sirf usi protocol ke liye valid hota hai, is liye status reset hoga.'))return;
+    try{
+      const d=await pxServerTask(()=>fetch('http://localhost:3000/api/proxies/apply-type',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type})}).then(r=>r.json()));
+      if(d&&d.success){
+        addLog('success','Proxy type set to '+type.toUpperCase()+' for '+d.count+' proxies'+(d.merged?' ('+d.merged+' duplicate removed)':'')+'. Status reset — ab Validate All chalayein.');
+        await pxRefreshFromServer();
+        pxUpdateRotationInfo();
+      }else{
+        addLog('error','Could not change proxy type: '+((d&&d.error)||'unknown error'));
+      }
+    }catch(e){addLog('error','Could not change proxy type: '+(e&&e.message?e.message:'network error'));}
   }
   async function clearProxies(){
     pxCancelValidation();

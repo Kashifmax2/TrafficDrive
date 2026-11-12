@@ -1,6 +1,6 @@
 {
   "name": "kg-trf-tool",
-  "version": "5.9.10",
+  "version": "5.9.11",
   "productName": "KG TRF Tool",
   "description": "KG TRF Tool - Desktop Traffic Automation Application",
   "main": "main.js",
@@ -16,6 +16,7 @@
     "test:privacy": "node scripts/privacy-test.js",
     "test:system": "node scripts/system-check-test.js",
     "test:rotation": "node scripts/proxy-rotation-test.js",
+    "test:validation": "node scripts/proxy-validation-policy-test.js",
     "build:win": "npm run chromium:prepare && electron-builder --win nsis portable --publish never",
     "build:linux": "npm run chromium:prepare && electron-builder --linux AppImage deb --publish never",
     "build:linux:dir": "npm run chromium:prepare && electron-builder --linux dir --x64",

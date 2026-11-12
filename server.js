@@ -146,17 +146,106 @@ function scheduleProxiesSave() {
   }, 1500);
 }
 
+// --- Validation outcome policy -------------------------------------------
+// A proxy can tunnel traffic perfectly and still be refused by one target
+// site (403/429, "Anonymous Proxy detected", VPN block page). That is a
+// target result, not a dead proxy - marking the tunnel dead emptied the pool
+// after a couple of validation runs.
+const TARGET_BLOCK_REASONS = new Set([
+  'site_blocked', 'proxy_detected', 'captcha', 'blocked',
+]);
+// Transient failures. Free proxies regularly need 15-25 s, so a single slow
+// check must not delete a proxy that was already proven to work.
+const SOFT_FAIL_REASONS = new Set([
+  'timeout', 'no_response', 'connection_reset', 'target_timeout',
+]);
+// Failures caused by our own browser/session or a cancelled job, not by the
+// proxy. The status must stay exactly as it was.
+const INFRA_FAIL_REASONS = new Set([
+  'browser_failed', 'browser_error', 'browser_closed', 'aborted',
+  'invalid_target', 'cancelled', 'proxy_validation_failed',
+]);
+const SOFT_FAIL_LIMIT = 2;
+
+function isTargetBlockReason(reason) {
+  if (!reason) return false;
+  if (TARGET_BLOCK_REASONS.has(reason)) return true;
+  return /^http_(401|403|405|406|429)$/.test(reason);
+}
+function isSoftFailReason(reason) {
+  if (!reason) return false;
+  if (SOFT_FAIL_REASONS.has(reason)) return true;
+  return /^http_5\d\d$/.test(reason) || /^proxy_(408|429|5\d\d)$/.test(reason);
+}
+function isInfraFailReason(reason) {
+  return !!reason && INFRA_FAIL_REASONS.has(reason);
+}
+
+// Pure policy: previous entry state + one check result -> new state.
+// Exported so scripts/proxy-validation-policy-test.js can verify it.
+function classifyProxyOutcome(prev, r, opts = {}) {
+  const prevEntry = prev || {};
+  const ok = !!(r && r.ok);
+  const reason = (r && r.reason) || (ok ? 'ok' : 'failed');
+  const prevStatus = prevEntry.status || 'unknown';
+
+  if (!ok && isInfraFailReason(reason)) {
+    return {
+      status: prevStatus === 'ok' || prevStatus === 'dead' ? prevStatus : 'unknown',
+      skipped: true, reason, flaky: false, targetBlocked: false,
+      softFails: prevEntry.softFails || 0,
+    };
+  }
+
+  const targetBlocked = !ok && isTargetBlockReason(reason);
+  let tunnelOk = typeof opts.tunnelOk === 'boolean' ? opts.tunnelOk : ok;
+  // Reaching a block page through the proxy still proves the tunnel works.
+  if (targetBlocked) tunnelOk = true;
+
+  const wasOk = prevStatus === 'ok';
+  let softFails = prevEntry.softFails || 0;
+  let flaky = false;
+  if (!tunnelOk) {
+    if (wasOk && isSoftFailReason(reason)) {
+      softFails += 1;
+      if (softFails < SOFT_FAIL_LIMIT) {
+        tunnelOk = true; // keep verified, only flag this slow check
+        flaky = true;
+      }
+    } else {
+      softFails = 0;
+    }
+  } else {
+    softFails = 0;
+  }
+
+  const status = tunnelOk ? 'ok' : 'dead';
+  return {
+    status,
+    skipped: false,
+    reason,
+    flaky: flaky || (status === 'ok' && !ok && !targetBlocked),
+    targetBlocked,
+    softFails,
+  };
+}
+
 function recordProxyResult(key, r, targetUrl, opts = {}) {
   const entry = loadedProxies.find((p) => proxyStoreKey(p) === key);
-  if (!entry) return;
+  if (!entry) return null;
+  const outcome = classifyProxyOutcome(entry, r, opts);
   const ok = !!(r && r.ok);
-  // A proxy can tunnel traffic perfectly and still be refused by one ad /
-  // campaign target ("Anonymous Proxy detected", 403, 5xx). That is a target
-  // result, not a dead proxy - marking the tunnel dead would shrink the
-  // rotation pool to nothing over a few runs.
-  const tunnelOk = typeof opts.tunnelOk === 'boolean' ? opts.tunnelOk : ok;
-  entry.status = tunnelOk ? 'ok' : 'dead';
-  entry.reason = (r && r.reason) || (ok ? 'ok' : 'failed');
+
+  // Do not rewrite a proxy because our own browser crashed or the job was
+  // cancelled; only note that a check was attempted.
+  entry.lastCheck = Date.now();
+  if (outcome.skipped) { scheduleProxiesSave(); return outcome; }
+
+  entry.status = outcome.status;
+  entry.reason = outcome.reason;
+  entry.flaky = outcome.flaky;
+  entry.targetBlocked = outcome.targetBlocked;
+  entry.softFails = outcome.softFails;
   entry.ms = r && typeof r.ms === 'number' ? r.ms : 0;
   if (r && r.egressIp) entry.egressIp = r.egressIp;
   if (r && typeof r.localIpMatched === 'boolean') entry.localIpMatched = r.localIpMatched;
@@ -164,7 +253,7 @@ function recordProxyResult(key, r, targetUrl, opts = {}) {
   if (r && r.countryCode) entry.countryCode = r.countryCode;
   if (r && r.timezone) entry.timezone = r.timezone;
   entry.validatedAt = Date.now();
-  // Target-specific result: only a real-browser check against the actual ad /
+  // Target-specific result: only a real check against the actual ad /
   // campaign URL can say whether the network accepts this IP.
   if (targetUrl) {
     entry.targetUrl = targetUrl;
@@ -173,6 +262,7 @@ function recordProxyResult(key, r, targetUrl, opts = {}) {
     entry.targetReason = entry.reason;
   }
   scheduleProxiesSave();
+  return outcome;
 }
 
 loadProxiesFromDisk();
@@ -1383,14 +1473,14 @@ async function scrapeProxyList() {
 // --- Proxy validation helper ---------------------------------------------
 // Tests a single proxy by connecting through it to a target URL. Returns
 // { ok, ms } — ok=true if the proxy responded within the timeout.
-function validateProxy(proxy, timeoutMs = 5000, targetUrl = null) {
+function validateProxy(proxy, timeoutMs = 12000, targetUrl = null, opts = {}) {
   // When a target URL is supplied, test the proxy the same way a browser
   // does: CONNECT tunnel + TLS handshake to the real destination. This
   // catches providers that block a site even though the proxy itself works.
   if (targetUrl) {
     const ProxyHandler = require('./Proxyhandler.js');
     const ph = new ProxyHandler();
-    return ph.testReachability(proxy, targetUrl, timeoutMs).then(r => ({
+    return ph.testReachability(proxy, targetUrl, timeoutMs, { fresh: opts.fresh !== false }).then(r => ({
       ok: !!r.ok,
       ms: r.ok ? r.ms : 0,
       reason: r.reason || (r.ok ? 'ok' : 'failed'),
@@ -1498,8 +1588,11 @@ function validateProxy(proxy, timeoutMs = 5000, targetUrl = null) {
 // list only keeps proxies a traffic session can actually use.
 async function runBrowserValidation(list, targetUrl, onResult, opts = {}) {
   const { BrowserProxyChecker } = require('./ProxyBrowserCheck.js');
-  const timeoutMs = Math.max(5000, Math.min(30000, parseInt(opts.timeoutMs, 10) || 15000));
-  const concurrency = Math.max(1, Math.min(8, parseInt(opts.concurrency, 10) || 6));
+  // Free proxies are slow: 15 s was cutting off proxies that answer in
+  // 20-25 s and marking them dead. 30 s plus lower concurrency keeps the
+  // machine responsive and stops false "timeout" deaths.
+  const timeoutMs = Math.max(8000, Math.min(45000, parseInt(opts.timeoutMs, 10) || 30000));
+  const concurrency = Math.max(1, Math.min(6, parseInt(opts.concurrency, 10) || 4));
   const checker = new BrowserProxyChecker({
     headless: true,
     timeoutMs,
@@ -2605,25 +2698,32 @@ async function handleRequest(req, res) {
     const jobId = 'vj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     const job = { total: list.length, queue: [], done: false, cancelled: false, createdAt: Date.now(), mode };
     validationJobs.set(jobId, job);
+
+    const pushResult = (p, r) => {
+      if (job.cancelled) return;
+      const key = keyOf(p);
+      const outcome = recordProxyResult(key, r, targetUrl) || {};
+      job.queue.push({
+        key,
+        ok: outcome.status === 'ok',
+        status: outcome.status || 'unknown',
+        skipped: !!outcome.skipped,
+        targetBlocked: !!outcome.targetBlocked,
+        flaky: !!outcome.flaky,
+        ms: r && r.ms,
+        reason: outcome.reason || (r && r.reason) || (r && r.ok ? 'ok' : 'failed'),
+        egressIp: (r && r.egressIp) || '',
+        country: (r && r.country) || '',
+        countryCode: (r && r.countryCode) || '',
+        timezone: (r && r.timezone) || '',
+        localIpMatched: !!(r && r.localIpMatched),
+      });
+    };
+
     (async () => {
       try {
         if (mode === 'browser') {
-          await runBrowserValidation(list, targetUrl, (i, p, r) => {
-            if (job.cancelled) return;
-            const key = keyOf(p);
-            recordProxyResult(key, r, targetUrl);
-            job.queue.push({
-              key,
-              ok: !!r.ok,
-              ms: r.ms,
-              reason: r.reason || (r.ok ? 'ok' : 'failed'),
-              egressIp: r.egressIp || '',
-              country: r.country || '',
-              countryCode: r.countryCode || '',
-              timezone: r.timezone || '',
-              localIpMatched: !!r.localIpMatched,
-            });
-          }, {
+          await runBrowserValidation(list, targetUrl, (i, p, r) => pushResult(p, r), {
             timeoutMs: body.timeoutMs,
             concurrency: body.concurrency,
             checkEgress: body.checkEgress,
@@ -2633,7 +2733,8 @@ async function handleRequest(req, res) {
           // Bounded worker pool. A huge burst (hundreds of sockets) could
           // stall the HTTP server, which made the UI look "stuck" until the
           // app was restarted.
-          const concurrency = Math.max(1, Math.min(20, parseInt(body.concurrency, 10) || 12));
+          const concurrency = Math.max(1, Math.min(20, parseInt(body.concurrency, 10) || 8));
+          const perTimeout = Math.max(5000, Math.min(30000, parseInt(body.timeoutMs, 10) || 20000));
           let next = 0;
           async function worker() {
             while (true) {
@@ -2642,11 +2743,13 @@ async function handleRequest(req, res) {
               if (i >= list.length) return;
               const p = list[i];
               let r;
-              try { r = await validateProxy(p, 4000, targetUrl); } catch (e) { r = { ok: false, ms: 0, reason: 'failed' }; }
+              try {
+                r = await validateProxy(p, perTimeout, targetUrl, { fresh: true });
+              } catch (e) {
+                r = { ok: false, ms: 0, reason: 'failed' };
+              }
               if (job.cancelled) return;
-              const key = keyOf(p);
-              recordProxyResult(key, r);
-              job.queue.push({ key, ok: !!r.ok, ms: r.ms, reason: r.reason || (r.ok ? 'ok' : 'failed') });
+              pushResult(p, r);
             }
           }
           await Promise.all(Array.from({ length: Math.min(concurrency, list.length) }, worker));
@@ -2702,8 +2805,21 @@ async function handleRequest(req, res) {
       const results = new Array(toValidate.length);
       await runBrowserValidation(toValidate, targetUrl, (i, p, r) => {
         const key = proxyStoreKey(p);
-        recordProxyResult(key, r, targetUrl);
-        results[i] = { key, ok: !!r.ok, ms: r.ms, reason: r.reason || (r.ok ? 'ok' : 'failed'), egressIp: r.egressIp || '', country: r.country || '', timezone: r.timezone || '', localIpMatched: !!r.localIpMatched };
+        const outcome = recordProxyResult(key, r, targetUrl) || {};
+        results[i] = {
+          key,
+          ok: outcome.status === 'ok',
+          status: outcome.status || 'unknown',
+          skipped: !!outcome.skipped,
+          targetBlocked: !!outcome.targetBlocked,
+          flaky: !!outcome.flaky,
+          ms: r.ms,
+          reason: outcome.reason || r.reason || (r.ok ? 'ok' : 'failed'),
+          egressIp: r.egressIp || '',
+          country: r.country || '',
+          timezone: r.timezone || '',
+          localIpMatched: !!r.localIpMatched,
+        };
       }, {
         timeoutMs: body.timeoutMs,
         concurrency: body.concurrency,
@@ -2719,14 +2835,26 @@ async function handleRequest(req, res) {
     // This keeps total time low even for large lists while still limiting
     // simultaneous connections.
     const results = new Array(toValidate.length);
-    const concurrency = Math.max(1, Math.min(20, parseInt(body.concurrency, 10) || 12));
+    const concurrency = Math.max(1, Math.min(20, parseInt(body.concurrency, 10) || 8));
+    const perTimeout = Math.max(5000, Math.min(30000, parseInt(body.timeoutMs, 10) || 20000));
     let nextIndex = 0;
     async function worker() {
       while (true) {
         const i = nextIndex++;
         if (i >= toValidate.length) return;
-        results[i] = await validateProxy(toValidate[i], 5000, targetUrl);
-        try { recordProxyResult(proxyStoreKey(toValidate[i]), results[i]); } catch (_) {}
+        results[i] = await validateProxy(toValidate[i], perTimeout, targetUrl, { fresh: true });
+        try {
+          const outcome = recordProxyResult(proxyStoreKey(toValidate[i]), results[i], targetUrl) || {};
+          results[i] = {
+            ...results[i],
+            ok: outcome.status === 'ok',
+            status: outcome.status || 'unknown',
+            skipped: !!outcome.skipped,
+            targetBlocked: !!outcome.targetBlocked,
+            flaky: !!outcome.flaky,
+            reason: outcome.reason || results[i].reason,
+          };
+        } catch (_) {}
       }
     }
     await Promise.all(Array.from({ length: concurrency }, worker));
@@ -2794,6 +2922,42 @@ async function handleRequest(req, res) {
       status,
       removed: before - loadedProxies.length,
       count: loadedProxies.length,
+    });
+    return;
+  }
+
+  // --- Proxies: apply protocol type to the whole loaded list ---
+  // The "Proxy Type" dropdown only applies to newly pasted lines. When the
+  // user realises the whole list is SOCKS4/SOCKS5 (or HTTP), this re-labels
+  // every entry and resets its validation state, because a result proven
+  // with one protocol says nothing about another.
+  if (pathname === '/api/proxies/apply-type' && method === 'POST') {
+    const body = await readBody(req).catch(() => ({}));
+    const type = String(body.type || '').toLowerCase();
+    if (!['http', 'https', 'socks4', 'socks5'].includes(type)) {
+      sendJSON(res, 400, { success: false, error: 'type must be http, https, socks4 or socks5' });
+      return;
+    }
+    backupProxiesToDisk();
+    const before = loadedProxies.length;
+    const merged = new Map();
+    for (const p of loadedProxies) {
+      if (!p || !p.host || !p.port) continue;
+      const next = {
+        type, host: p.host, port: parseInt(p.port, 10),
+        username: p.username || null, password: p.password || null,
+        raw: p.raw || (p.host + ':' + p.port),
+        status: 'unknown', reason: '', flaky: false, targetBlocked: false, softFails: 0,
+      };
+      const key = proxyStoreKey(next);
+      if (!merged.has(key)) merged.set(key, next);
+    }
+    loadedProxies = [...merged.values()];
+    saveProxiesToDisk();
+    sendJSON(res, 200, {
+      success: true, type,
+      count: loadedProxies.length,
+      merged: Math.max(0, before - loadedProxies.length),
     });
     return;
   }
@@ -3512,5 +3676,9 @@ function startServer() {
 
 module.exports = { 
   get server() { return createServer(); },
-  startServer 
+  startServer,
+  // Pure validation policy, used by scripts/proxy-validation-policy-test.js.
+  classifyProxyOutcome,
+  isTargetBlockReason,
+  isSoftFailReason,
 };

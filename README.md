@@ -2,7 +2,7 @@
 
 Desktop traffic-automation app built with **Electron + Node.js + Playwright**.
 
-- Product name: **KG TRF Tool** (version **5.9.10**)
+- Product name: **KG TRF Tool** (version **5.9.11**)
 - Dashboard UI: plain HTML/CSS/JS (`index.html`, `i18n.js`)
 - Local REST backend: `server.js` on `http://127.0.0.1:3000`
 - Automation: Playwright 1.63 driving Chromium
@@ -12,6 +12,36 @@ Desktop traffic-automation app built with **Electron + Node.js + Playwright**.
 > Source-only repository. `node_modules`, the Electron runtime, the bundled
 > Chromium browser and the packaged `app.asar` are **not** committed. They are
 > installed or downloaded by the build steps below.
+
+## What's new in 5.9.11
+
+### Validation that stops killing slow-but-working proxies
+
+- **Slow free proxies are tolerated** — the reachability check now waits up to
+  **20 s** (was 4 s) and the real-browser check up to **30 s** (was 15 s), with
+  lower concurrency (8 / 4) so the machine stays responsive. Proxies that
+  answer in 15–25 s are no longer marked dead just because a fast re-run
+  happened.
+- **A verified proxy survives one bad check** — an `ok` proxy that times out
+  (or gets `no_response` / `connection_reset` / `5xx`) stays **Verified** and
+  is flagged `flaky`. It becomes dead only after **two consecutive** soft
+  failures. This is what emptied the pool on repeated Validate All runs.
+- **Target-site blocks are not dead proxies** — `site_blocked`,
+  `proxy_detected`, `captcha`, `http_401/403/429` now mean *the tunnel works*
+  but the target site rejected that IP: the proxy stays **Verified** with a
+  `targetBlocked` flag and remains usable for rotation.
+- **Infra failures keep the previous status** — if our own browser crashed or
+  the job was cancelled (`browser_error`, `browser_closed`, `aborted`, …), the
+  proxy is left exactly as it was and counted as *skipped*.
+- **Fresh checks for explicit validation** — Validate All bypasses the
+  5-minute reachability cache, so every run reflects the live network instead
+  of replaying an old pass/fail.
+- **`Apply to all loaded`** — the Proxy Type dropdown only labels newly pasted
+  lines; the new button re-labels every loaded proxy via
+  `POST /api/proxies/apply-type` (dedupes `host:port`, resets validation state)
+  so a list imported as HTTP can be switched to SOCKS4/SOCKS5 correctly.
+- New `npm run test:validation` policy test covers the outcome rules and runs
+  in CI on Windows and Linux.
 
 ## What's new in 5.9.10
 

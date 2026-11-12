@@ -39,6 +39,9 @@ jobs:
       - name: Proxy rotation policy test
         run: npm run test:rotation
 
+      - name: Proxy validation policy test
+        run: npm run test:validation
+
       - name: Build NSIS + portable EXE
         run: npm run build:win
 
@@ -83,6 +86,9 @@ jobs:
 
       - name: Proxy rotation policy test
         run: npm run test:rotation
+
+      - name: Proxy validation policy test
+        run: npm run test:validation
 
       - name: Build AppImage + deb
         run: npm run build:linux

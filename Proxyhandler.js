@@ -63,18 +63,23 @@ class ProxyHandler {
 
   // Returns { ok, reason, ms }. reason: ok | auth | site_blocked | timeout |
   // refused | connect_failed | invalid_target
-  testReachability(proxy, targetUrl, timeoutMs = 6000) {
+  testReachability(proxy, targetUrl, timeoutMs = 6000, options = {}) {
     return new Promise((resolve) => {
       if (!proxy || !proxy.host || !proxy.port) { resolve({ ok: false, reason: 'invalid', ms: 0 }); return; }
       let target;
       try { target = new URL(targetUrl); } catch (_) { resolve({ ok: false, reason: 'invalid_target', ms: 0 }); return; }
 
+      // Explicit validation runs must always produce a fresh result; only the
+      // internal preflight may reuse the 5-minute reachability cache.
+      const useCache = options.fresh !== true;
       const scheme = (proxy.type || 'http').toLowerCase();
       const cacheKey = scheme + ':' + proxy.host + ':' + proxy.port + ':' + target.origin;
-      const hit = reachCache.get(cacheKey);
-      if (hit && hit.exp > Date.now()) {
-        resolve({ ok: hit.ok, reason: hit.reason, ms: 0, cached: true });
-        return;
+      if (useCache) {
+        const hit = reachCache.get(cacheKey);
+        if (hit && hit.exp > Date.now()) {
+          resolve({ ok: hit.ok, reason: hit.reason, ms: 0, cached: true });
+          return;
+        }
       }
 
       const start = Date.now();
@@ -85,7 +90,7 @@ class ProxyHandler {
         settled = true;
         if (timer) clearTimeout(timer);
         const result = { ok, reason: reason || (ok ? 'ok' : 'failed'), ms: Date.now() - start };
-        reachCache.set(cacheKey, { ok: result.ok, reason: result.reason, exp: Date.now() + REACH_TTL_MS });
+        if (useCache) reachCache.set(cacheKey, { ok: result.ok, reason: result.reason, exp: Date.now() + REACH_TTL_MS });
         resolve(result);
       };
       timer = setTimeout(() => finish(false, 'timeout'), timeoutMs + 500);
