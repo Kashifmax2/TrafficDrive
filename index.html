@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KG TRF Tool 5.9.9</title>
+<title>KG TRF Tool 5.9.10</title>
 <script>
 /* API base shim ------------------------------------------------------------
    The Electron app opens index.html over file:// and talks to the loopback
@@ -93,7 +93,7 @@ body.light-mode .rc-adonly-badge{color:#fff;}
 <button class="sb-toggle" onclick="toggleSb()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
 <div class="sb-overlay" onclick="toggleSb()"></div>
 <aside class="sb">
-  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.9</div></div></div>
+  <div class="sb-logo"><div class="sb-icon"><img src="logo.png" alt="KG TRF Tool" style="width:100%;height:100%;border-radius:14px;object-fit:cover"></div><div><div class="sb-name">KG TRF Tool</div><div class="sb-ver">v5.9.10</div></div></div>
   <nav class="sb-nav">
     <div class="ni active" onclick="goPage('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span data-i18n="nav_dashboard">Dashboard</span></div>
     <div class="ni" onclick="goPage('campaigns',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg><span data-i18n="nav_campaigns">Campaigns</span><span class="ni-badge" id="campBadge">0</span></div>
@@ -270,7 +270,7 @@ body.light-mode .rc-adonly-badge{color:#fff;}
           <div class="f"><label class="fl">Test URL (optional)</label><input type="text" id="px-test-url" placeholder="https://your-site.com — proxies ko is site ke against check kiya jayega"></div>
           <div class="f" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="px-real-browser" checked style="width:16px;height:16px;accent-color:var(--grn)"><label class="fl" for="px-real-browser" style="margin:0;cursor:pointer">Real browser check <span style="color:var(--t3);font-weight:400">(recommended — opens Chromium through each proxy, only truly usable proxies pass)</span></label></div>
           <div class="hint" style="margin-bottom:8px">Agar target site "Anonymous Proxy detected / VPN detected" page dikhaye to woh proxy <b>Site Detected Proxy</b> mark hogi aur campaigns mein use nahi hogi. Yeh site ki IP-reputation block hai — free/datacenter proxies par aam hai; residential/ISP proxy ya doosra working proxy use karein.</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="loadProxies()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg><span data-i18n="load_proxies">Load Proxies</span></button><button class="btn btn-g" onclick="scrapeProxies()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="scrape_proxies">Scrape Proxies</span></button><button class="btn btn-o" onclick="validateAllPx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="validate_all">Validate All</span></button><button class="btn btn-o" onclick="removeDeadProxies()" style="color:var(--red);border-color:rgba(248,81,73,.45)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg><span>Remove Dead</span></button><button class="btn btn-danger" onclick="clearProxies()" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span data-i18n="clear">Clear</span></button></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="loadProxies()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg><span data-i18n="load_proxies">Load Proxies</span></button><button class="btn btn-g" onclick="scrapeProxies()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="scrape_proxies">Scrape Proxies</span></button><button class="btn btn-o" onclick="validateAllPx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="validate_all">Validate All</span></button><button class="btn btn-o" onclick="removeDeadProxies()" style="color:var(--red);border-color:rgba(248,81,73,.45)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg><span>Remove Dead</span></button><button class="btn btn-o" onclick="removeProxiesByStatus('ok')" title="Remove every proxy with a verified/working status" style="color:var(--grn);border-color:rgba(63,185,80,.45)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 12l2 2 4-4"/></svg><span>Remove All Verified Proxies</span></button><button class="btn btn-o" onclick="removeProxiesByStatus('unknown')" title="Remove every proxy that has not been validated yet" style="color:var(--ylw);border-color:rgba(210,153,34,.45)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg><span>Remove All Loaded Proxies</span></button><button class="btn btn-danger" onclick="clearProxies()" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg><span data-i18n="clear">Clear</span></button></div>
         </div>
       </div>
       <div class="card" style="margin-bottom:0">
@@ -940,15 +940,15 @@ body.light-mode .rc-adonly-badge{color:#fff;}
     <div class="card" style="margin-top:14px">
       <div class="cb" style="text-align:center">
         <div style="font-size:13px;font-weight:600;color:var(--t1)" data-i18n="version_info">KG TRF Tool</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.9 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.9</span></div>
+        <div style="font-size:12px;color:var(--t3);margin-top:6px"><span data-i18n="current_version">Version</span>: v5.9.10 &nbsp;|&nbsp; <span data-i18n="release_date">Released</span>: Nov 2026 &nbsp;|&nbsp; <span style="color:var(--grn);font-weight:700">5.9.10</span></div>
         <div style="font-size:11px;color:var(--pl);margin-top:8px;padding:8px;background:var(--pdim);border-radius:6px;border:1px solid rgba(124,58,237,.3)">
-          KG TRF Tool · v5.9.9
+          KG TRF Tool · v5.9.10
         </div>
       </div>
     </div>
   </div></div>
 
-  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.9</div>
+  <div class="footer" data-i18n="footer">© 2026 KG TRF Tool · v5.9.10</div>
 </main>
 
 <input type="hidden" id="internalLinkCount" value="3">
@@ -1217,7 +1217,7 @@ setInterval(tick,1000);tick();
 
 const pageMeta={dashboard:{title:'Dashboard',sub:'Automate website traffic with smart controls'},campaigns:{title:'Campaigns',sub:'Manage and monitor all your traffic campaigns'},proxies:{title:'Proxies',sub:'Import, validate and manage your proxy pool'},logs:{title:'Logs',sub:'Full activity log with filtering and export'},settings:{title:'Settings',sub:'Configure application behavior and preferences'},automation:{title:'Scroll System',sub:'Human-like scrolling automation with cruise control'},resolutions:{title:'Screen Resolutions',sub:'Change browser window resolution for different screen sizes'},useragents:{title:'User Agents',sub:'Select and rotate user agents for desktop and mobile browsers'},privacy:{title:'Privacy',sub:'Anti-detection, fingerprint protection & spoofing controls'},browsers:{title:'Browser Library',sub:'All supported browsers with real logos and engine details'},rpa:{title:'RPA Automation',sub:'Record, replay, edit & automate browser actions'},schedule:{title:'Schedule',sub:'Schedule automation tasks with timers and weekly recurring plans'},help:{title:'Help & Support',sub:'Documentation, FAQ, and contact support'}};
 function toggleSb(){document.querySelector('.sb').classList.toggle('open');document.querySelector('.sb-overlay').classList.toggle('open');}
-function goPage(id,el){try{document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));document.getElementById('pg-'+id).classList.add('active');el.classList.add('active');const meta=pageMeta[id]||{title:id,sub:''};document.getElementById('pageTitle').textContent=meta.title;document.getElementById('pageSub').textContent=meta.sub;if(id==='rpa'&&typeof window.rpaRefreshProxySelect==='function'){try{window.rpaRefreshProxySelect();}catch(_){}}if(id==='privacy'&&typeof loadSystemCheck==='function'){try{loadSystemCheck();}catch(_){}}if(window.innerWidth<=768){document.querySelector('.sb').classList.remove('open');document.querySelector('.sb-overlay').classList.remove('open');}}catch(err){console.error('[goPage] ERROR:',err.message);}}
+function goPage(id,el){try{document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));document.getElementById('pg-'+id).classList.add('active');el.classList.add('active');const meta=pageMeta[id]||{title:id,sub:''};document.getElementById('pageTitle').textContent=meta.title;document.getElementById('pageSub').textContent=meta.sub;if(id==='rpa'&&typeof window.rpaRefreshProxySelect==='function'){try{window.rpaRefreshProxySelect();}catch(_){}}if(id==='proxies'&&typeof pxRefreshFromServer==='function'){try{pxRefreshFromServer();}catch(_){}}if(id==='privacy'&&typeof loadSystemCheck==='function'){try{loadSystemCheck();}catch(_){}}if(window.innerWidth<=768){document.querySelector('.sb').classList.remove('open');document.querySelector('.sb-overlay').classList.remove('open');}}catch(err){console.error('[goPage] ERROR:',err.message);}}
 
 function updateThreadDisplay(){const threads=document.getElementById('numThreads').value;addLog('info',t('thread_count_updated')+': '+threads);try{applyThreadRecommendation();}catch(e){}}
 function tog(el){el.classList.toggle('on');}
@@ -1663,10 +1663,56 @@ async function ensureWorkingProxies(list){
   }
   return await fetchLoadedProxies();
 }
-const PX_DEL_CELL='<td><button class="px-del" title="Remove this proxy" onclick="removeProxyRow(this)">✕</button></td>';
-function pxKeyOf(p){return String(p.type||'http').toLowerCase()+':'+p.host+':'+p.port;}
-function renderProxyList(proxies){const tbody=document.getElementById('px-table');if(!tbody)return;const total=document.getElementById('px-total');const working=document.getElementById('px-working');const dead=document.getElementById('px-dead');const speed=document.getElementById('px-speed');if(!proxies||!proxies.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:24px">'+t('no_proxies')+'</td></tr>';if(total)total.textContent='0';if(working)working.textContent='0';if(dead)dead.textContent='0';if(speed)speed.textContent='—';return;}const frag=document.createDocumentFragment();let okN=0,deadN=0,sum=0,cnt=0;const rank=s=>s==='ok'?0:(s==='dead'?2:1);const sorted=proxies.slice().sort((a,b)=>rank(a&&a.status)-rank(b&&b.status));sorted.forEach(p=>{const row=document.createElement('tr');const raw=p.raw||(p.host+':'+p.port);row.dataset.key=pxKeyOf(p);let speedTxt='—',statusHtml='<span class="badge check">'+t('loaded')+'</span>';if(p&&p.status==='ok'){okN++;if(typeof p.ms==='number'&&p.ms>0){speedTxt=p.ms;sum+=p.ms;cnt++;}statusHtml='<span class="badge ok" title="'+(p.reason||'ok')+'">'+t('successful')+'</span>';}else if(p&&p.status==='dead'){deadN++;statusHtml='<span class="badge dead" title="'+(p.reason||'failed')+'">'+pxReasonLabel(p.reason||'failed')+'</span>';}row.innerHTML='<td>'+raw+'</td><td>'+String((p&&p.type)||'http').toUpperCase()+'</td><td>'+speedTxt+'</td><td>'+statusHtml+'</td>'+PX_DEL_CELL;frag.appendChild(row);});tbody.innerHTML='';tbody.appendChild(frag);if(total)total.textContent=proxies.length;if(working)working.textContent=okN;if(dead)dead.textContent=deadN;if(speed)speed.textContent=cnt?Math.round(sum/cnt):'—';pxUpdateRotationInfo();}
-async function restoreProxies(){try{const proxies=await fetchLoadedProxies();if(!proxies||!proxies.length)return;renderProxyList(proxies);const input=document.getElementById('px-input');if(input&&!input.value.trim()){input.value=proxies.map(p=>p.raw||(p.host+':'+p.port)).join('\n');}try{const savedTest=localStorage.getItem('proxyTestUrl');const ti=document.getElementById('px-test-url');if(ti&&savedTest)ti.value=savedTest;const rb=document.getElementById('px-real-browser');if(rb&&localStorage.getItem('proxyRealBrowser')==='0')rb.checked=false;if(rb)rb.addEventListener('change',()=>{try{localStorage.setItem('proxyRealBrowser',rb.checked?'1':'0');}catch(e){}});}catch(e){}try{const savedType=localStorage.getItem('proxyType');if(savedType){const sel=document.getElementById('px-type');if(sel)sel.value=savedType;}}catch(e){}}catch(e){}}
+  const PX_DEL_CELL='<td><button class="px-del" title="Remove this proxy" onclick="removeProxyRow(this)">✕</button></td>';
+  function pxEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function pxKeyOf(p){return String((p&&p.type)||'http').toLowerCase()+':'+(p&&p.host)+':'+(p&&p.port);}
+  function pxIsValidProxy(p){
+    if(!p)return false;
+    const host=String(p.host||'').trim();
+    const port=parseInt(p.port,10);
+    if(!host||!port||port<1||port>65535)return false;
+    if(/\s/.test(host))return false;
+    if(/^(https?|socks[45])$/i.test(host))return false;
+    return /^[a-z0-9._:-]+$/i.test(host);
+  }
+  function pxNormalizeProxy(p){
+    return {type:String((p&&p.type)||'http').toLowerCase(),host:String(p.host).trim(),port:parseInt(p.port,10),username:(p&&p.username)||null,password:(p&&p.password)||null,raw:(p&&p.raw)||(p.host+':'+p.port)};
+  }
+  function pxParseLine(raw,defaultType){
+    if(raw==null)return null;
+    let line=String(raw).trim().replace(/^["']+|["']+$/g,'');
+    if(!line||line.charAt(0)==='#')return null;
+    let proto=null;
+    const m=line.match(/^(https?|socks[45]):\/\//i);
+    if(m){proto=m[1].toLowerCase();line=line.slice(m[0].length);}
+    line=line.split('/')[0];
+    let username=null,password=null;
+    if(line.indexOf('@')>=0){
+      const at=line.lastIndexOf('@');
+      const auth=line.slice(0,at);
+      line=line.slice(at+1);
+      const c=auth.indexOf(':');
+      if(c>=0){username=auth.slice(0,c)||null;password=auth.slice(c+1)||null;}
+      else username=auth||null;
+    }
+    const parts=line.split(':');
+    if(parts.length<2)return null;
+    const host=parts[0].trim();
+    const port=parseInt(parts[1],10);
+    if(parts.length>=4&&!username){username=parts[2]||null;password=parts.slice(3).join(':')||null;}
+    const p={type:(proto||defaultType||'http').toLowerCase(),host,port,username,password,raw:String(raw).trim()};
+    return pxIsValidProxy(p)?p:null;
+  }
+  function pxStatusLabel(key,fallback){const v=t(key);return (v&&v!==key)?v:fallback;}
+  function pxRowToProxy(row){
+    if(row&&row._px&&pxIsValidProxy(row._px))return row._px;
+    if(!row||!row.children||!row.children[0])return null;
+    const raw=(row.children[0].textContent||'').trim();
+    const type=((row.children[1]&&row.children[1].textContent)||'http').trim().toLowerCase();
+    return pxParseLine(raw,type);
+  }
+  function renderProxyList(proxies){const tbody=document.getElementById('px-table');if(!tbody)return;const totalEl=document.getElementById('px-total'),workingEl=document.getElementById('px-working'),deadEl=document.getElementById('px-dead'),speedEl=document.getElementById('px-speed');const clean=[],seen=new Set();(Array.isArray(proxies)?proxies:[]).forEach(p=>{if(!pxIsValidProxy(p))return;const n=pxNormalizeProxy(p);const key=pxKeyOf(n);if(seen.has(key))return;seen.add(key);n.status=p.status==='ok'?'ok':(p.status==='dead'?'dead':'unknown');n.reason=(p&&p.reason)||'';n.ms=p&&typeof p.ms==='number'?p.ms:0;clean.push(n);});if(!clean.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:24px">'+pxEsc(t('no_proxies'))+'</td></tr>';if(totalEl)totalEl.textContent='0';if(workingEl)workingEl.textContent='0';if(deadEl)deadEl.textContent='0';if(speedEl)speedEl.textContent='—';pxUpdateRotationInfo();return;}const rank=s=>s==='ok'?0:(s==='dead'?2:1);clean.sort((a,b)=>rank(a.status)-rank(b.status));const frag=document.createDocumentFragment();let okN=0,deadN=0,sum=0,cnt=0;clean.forEach(p=>{const row=document.createElement('tr');row.dataset.key=pxKeyOf(p);row._px=p;let speedTxt='—',statusHtml='';if(p.status==='ok'){okN++;if(p.ms>0){speedTxt=p.ms;sum+=p.ms;cnt++;}statusHtml='<span class="badge ok" title="'+pxEsc(p.reason||'ok')+'">'+pxEsc(pxStatusLabel('px_verified','Verified'))+'</span>';}else if(p.status==='dead'){deadN++;statusHtml='<span class="badge dead" title="'+pxEsc(p.reason||'failed')+'">'+pxEsc(pxReasonLabel(p.reason||'failed'))+'</span>';}else{statusHtml='<span class="badge check" title="'+pxEsc('Not validated yet')+'">'+pxEsc(pxStatusLabel('px_status_loaded','Loaded'))+'</span>';}row.innerHTML='<td>'+pxEsc(p.raw)+'</td><td>'+pxEsc(p.type.toUpperCase())+'</td><td>'+speedTxt+'</td><td>'+statusHtml+'</td>'+PX_DEL_CELL;frag.appendChild(row);});tbody.innerHTML='';tbody.appendChild(frag);if(totalEl)totalEl.textContent=clean.length;if(workingEl)workingEl.textContent=okN;if(deadEl)deadEl.textContent=deadN;if(speedEl)speedEl.textContent=cnt?Math.round(sum/cnt):'—';pxUpdateRotationInfo();}
+  async function restoreProxies(){try{const proxies=await fetchLoadedProxies();renderProxyList(proxies||[]);const input=document.getElementById('px-input');if(input&&!input.value.trim()&&proxies&&proxies.length){input.value=proxies.filter(pxIsValidProxy).map(p=>p.raw||(p.host+':'+p.port)).join('\n');}try{const savedTest=localStorage.getItem('proxyTestUrl');const ti=document.getElementById('px-test-url');if(ti&&savedTest)ti.value=savedTest;const rb=document.getElementById('px-real-browser');if(rb&&localStorage.getItem('proxyRealBrowser')==='0')rb.checked=false;if(rb&&!rb.dataset.bound){rb.dataset.bound='1';rb.addEventListener('change',()=>{try{localStorage.setItem('proxyRealBrowser',rb.checked?'1':'0');}catch(e){}});}try{const savedType=localStorage.getItem('proxyType');if(savedType){const sel=document.getElementById('px-type');if(sel)sel.value=savedType;}}catch(e){}}catch(e){}}catch(e){}}
 
 function startCamp(){startCampRunner();}
 async function startCampRunner(){const urlRaw=document.getElementById('websiteUrl').value.trim();const url=normalizeUrlInput(urlRaw);const keywords=document.getElementById('keywords').value.trim();const restaurant=document.getElementById('bizName').value.trim();const bizUrlRaw=document.getElementById('bizUrl').value.trim();const bizUrl=normalizeUrlInput(bizUrlRaw);const scrollModeEl=document.getElementById('scrollMode');const scrollDirectionEl=document.getElementById('scrollDirection');const scrollDistanceEl=document.getElementById('scrollDistance');const scrollDurationEl=document.getElementById('scrollDuration');const scrollSettings={scrollMode:scrollModeEl?scrollModeEl.value:'natural',scrollDirection:scrollDirectionEl?scrollDirectionEl.value:'down',scrollDistance:scrollDistanceEl?(parseInt(scrollDistanceEl.value)||800):800,scrollDuration:scrollDurationEl?(parseInt(scrollDurationEl.value)||5000):5000};if(!url){const m=urlRaw?('Invalid website URL "'+urlRaw+'". Use a full domain, e.g. https://example.com'):t('enter_website_url');addLog('error',m);showToast(m,'error');return;}if(url!==urlRaw){try{document.getElementById('websiteUrl').value=url;}catch(e){}}if(curMode==='organic'&&!keywords){addLog('error',t('enter_keywords_organic'));showToast(t('enter_keywords_organic'),'error');return;}if(curMode==='gmaps'&&!restaurant){addLog('error',t('enter_biz_name_gmaps'));showToast(t('enter_biz_name_gmaps'),'error');return;}if(curMode==='gmaps'&&bizUrlRaw&&!bizUrl){const m='Invalid business website URL "'+bizUrlRaw+'". Use a full domain, e.g. https://example.com';addLog('error',m);showToast(m,'error');return;}if(bizUrl&&bizUrl!==bizUrlRaw){try{document.getElementById('bizUrl').value=bizUrl;}catch(e){}}if(isRunning){showToast('A campaign is already running. Stop it first.','warn');return;}isRunning=true;isPaused=false;sessionCount=0;visitCount=0;uptimeSec=0;lastLogCount=0;const sbS0=document.getElementById('sbSess');if(sbS0)sbS0.textContent='0';const sbV0=document.getElementById('sbVisits');if(sbV0)sbV0.textContent='0';startUptime();setStatus('run');updateActionButtons('running');enableFormFields(false);addLog('info',t('campaign_started_log')+' → '+url);addLog('info',t('mode_label')+': '+curMode+' | '+t('default_sessions')+': '+document.getElementById('numSessions').value);if(autoLoopEnabled){addLog('info',t('auto_loop_on_log'));}if(curMode==='referral'){const refPlatformEl=document.getElementById('refPlatform');const refPlatform=refPlatformEl?refPlatformEl.value:'random';addLog('info',t('ref_platform_log')+': '+refPlatform);}const proxiesRaw0=await fetchLoadedProxies();let proxiesRaw=proxiesRaw0;if(proxiesRaw.length){proxiesRaw=await ensureWorkingProxies(proxiesRaw);const okCount=proxiesRaw.filter(p=>p&&p.status==='ok').length;if(!okCount){const pm='Koi working proxy nahi mila. Proxies page par "Real browser check" ON rakhein aur Validate All chalayein, phir Start karein. Ya Proxies → Clear karein aur direct IP se chalayein.';addLog('error',pm);showToast(pm,'error');isRunning=false;setStatus('stop');updateActionButtons('stopped');enableFormFields(true);if(upTimer){clearInterval(upTimer);upTimer=null;}return;}addLog('success',t('proxies_available_log')+': '+okCount+' working / '+proxiesRaw.length);}else{addLog('warn',t('no_proxies_backend'));}const proxies=buildProxyPayload(proxiesRaw);
@@ -1754,37 +1800,173 @@ function getCategoryLogo(category){
   return logos[category]||logos.business;
 }
 
-function loadProxies(){const input=document.getElementById('px-input').value.trim();if(!input){addLog('error',t('no_proxies_load'));return;}const type=(document.getElementById('px-type').value||'HTTP').toLowerCase();try{localStorage.setItem('proxyType',document.getElementById('px-type').value||'HTTP');}catch(e){}const lines=input.split('\n').map(l=>l.trim()).filter(Boolean);const proxies=lines.map(raw=>{const line=raw.trim();let host=null,port=null,username=null,password=null;let cleaned=line;cleaned=cleaned.replace(/^(https?|socks[45]):\/\//i,'');if(cleaned.includes('@')){const [authPart,hostPart]=cleaned.split('@');cleaned=hostPart;const auth=authPart.split(':');username=auth[0]||null;password=auth.slice(1).join(':')||null;}const parts=cleaned.split(':');if(parts.length>=2){host=parts[0];port=parseInt(parts[1],10);}if(parts.length>=4&&!username){host=parts[0];port=parseInt(parts[1],10);username=parts[2]||null;password=parts.slice(3).join(':')||null;}return{type,host,port,username,password,raw:line};});
+  let pxStoreQueue=Promise.resolve();
+  function pxServerTask(fn){pxStoreQueue=pxStoreQueue.then(fn,fn);return pxStoreQueue;}
+  async function pxFetchJson(url,opts,timeoutMs){
+    const ctrl=typeof AbortController!=='undefined'?new AbortController():null;
+    const timer=ctrl?setTimeout(()=>{try{ctrl.abort();}catch(e){}},timeoutMs||15000):null;
+    try{
+      const r=await fetch(url,Object.assign({},opts||{},ctrl?{signal:ctrl.signal}:{}));
+      return await r.json();
+    }finally{if(timer)clearTimeout(timer);}
+  }
+  async function pxRefreshFromServer(){if(pxValidateRunning)return;try{const all=await fetchLoadedProxies();if(Array.isArray(all))renderProxyList(all);}catch(e){}}
 
-// Append proxies to the table (don't clear existing ones)
-const tbody=document.getElementById('px-table');
-// Remove the "no proxies" placeholder row if present
-const placeholder=tbody.querySelector('td[colspan]');
-if(placeholder&&placeholder.textContent.includes(t('no_proxies')))tbody.innerHTML='';
-proxies.forEach(p=>{const row=document.createElement('tr');row.dataset.key=pxKeyOf(p);row.innerHTML=`<td>${p.raw}</td><td>${(p.type||'http').toUpperCase()}</td><td>—</td><td><span class="badge check">${t('loaded')}</span></td>`+PX_DEL_CELL;tbody.appendChild(row);});
+  async function loadProxies(){
+    const inputEl=document.getElementById('px-input');
+    const input=inputEl?(inputEl.value||'').trim():'';
+    if(!input){addLog('error',t('no_proxies_load'));return;}
+    const typeEl=document.getElementById('px-type');
+    const type=(typeEl&&typeEl.value?typeEl.value:'HTTP').toLowerCase();
+    try{if(typeEl)localStorage.setItem('proxyType',typeEl.value||'HTTP');}catch(e){}
+    const tbody=document.getElementById('px-table');
+    if(!tbody){addLog('error','Proxy table not found');return;}
+    const existing=new Set([...tbody.querySelectorAll('tr')].filter(r=>r.dataset&&r.dataset.key).map(r=>r.dataset.key));
+    const parsed=[],seen=new Set();
+    let invalid=0;
+    input.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).forEach(line=>{const p=pxParseLine(line,type);if(!p){invalid++;return;}const key=pxKeyOf(p);if(seen.has(key)||existing.has(key))return;seen.add(key);parsed.push(p);});
+    if(!parsed.length){
+      if(invalid)addLog('warn','No valid proxies found — use IP:PORT or IP:PORT:USER:PASS (one per line).');
+      else addLog('info','All pasted proxies are already loaded.');
+      return;
+    }
+    const placeholder=tbody.querySelector('td[colspan]');
+    if(placeholder&&placeholder.textContent.includes(t('no_proxies')))tbody.innerHTML='';
+    parsed.forEach(p=>{const row=document.createElement('tr');row.dataset.key=pxKeyOf(p);row._px=p;row.innerHTML='<td>'+pxEsc(p.raw)+'</td><td>'+pxEsc(p.type.toUpperCase())+'</td><td>—</td><td><span class="badge check" title="'+pxEsc('Not validated yet')+'">'+pxEsc(pxStatusLabel('px_status_loaded','Loaded'))+'</span></td>'+PX_DEL_CELL;tbody.appendChild(row);});
+    refreshProxyCounters();
+    addLog('info','Loaded '+parsed.length+' new proxy row(s) — validating will confirm which ones work.');
+    let synced=false;
+    try{
+      const data=await pxServerTask(()=>fetch('http://localhost:3000/api/proxies/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({proxies:parsed})}).then(r=>r.json()));
+      if(data&&data.success){synced=true;addLog('success',parsed.length+' '+t('proxies_loaded_saved')+' ('+t('total_loaded')+': '+data.count+')');}
+      else addLog('warn',t('proxies_local_backend_fail'));
+    }catch(e){addLog('warn',t('proxies_local_backend_unreachable'));}
+    if(synced){try{const all=await fetchLoadedProxies();if(all&&all.length)renderProxyList(all);}catch(e){}}
+    else{refreshProxyCounters();}
+    if(invalid)addLog('warn',invalid+' line(s) skipped — not a valid proxy format.');
+  }
 
-const currentTotal=tbody.querySelectorAll('tr').length;document.getElementById('px-total').textContent=currentTotal;document.getElementById('px-working').textContent=currentTotal;document.getElementById('px-dead').textContent='0';document.getElementById('px-speed').textContent='—';
-
-fetch('http://localhost:3000/api/proxies/load',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({proxies})}).then(r=>r.json()).then(data=>{if(data&&data.success){addLog('success',proxies.length+' '+t('proxies_loaded_saved')+' ('+t('total_loaded')+': '+data.count+')');}else{addLog('warn',t('proxies_local_backend_fail'));}}).catch(()=>{addLog('warn',t('proxies_local_backend_unreachable'));});}
-
-let pxValidateRunning=false,pxValidateTimer=null;
-function pxSetProgress(txt){const el=document.getElementById('px-progress');if(el)el.textContent=txt||'';}
-function pxReasonLabel(reason){if(reason==='auth')return 'Auth Failed (407)';if(reason==='payment')return 'Payment Required';if(reason==='timeout')return 'Timeout';if(reason==='refused')return 'Refused';if(reason==='connect_failed')return 'No Connection';if(reason==='site_blocked')return 'Site Blocked';if(reason==='proxy_detected')return 'Site Detected Proxy';if(reason==='cert_error')return 'Cert Error (MITM)';if(reason==='proxy_conn_failed')return 'Proxy Conn Failed';if(reason==='tunnel_failed')return 'Tunnel Failed';if(reason==='ip_leak')return 'IP Leak (not proxying)';if(reason==='dns_failed')return 'DNS Failed';if(reason==='connection_reset')return 'Conn Reset';if(reason==='browser_failed')return 'Browser Failed';if(reason==='browser_error')return 'Browser Error';if(reason==='browser_closed')return 'Browser Closed';if(reason==='no_response')return 'No Response';if(reason==='http_error')return 'HTTP Error';if(reason==='aborted')return 'Aborted';if(reason==='invalid_target')return 'Invalid URL';if(reason==='invalid')return 'Invalid Proxy';if(reason && reason.indexOf('proxy_')===0)return 'Proxy Error '+reason.slice(6);return t('failed');}
-function pxApplyResult(row,item,st){const reason=item.reason||(item.ok?'ok':'failed');st.reasons[reason]=(st.reasons[reason]||0)+1;const speedCell=row.children[2],statusCell=row.children[3];if(item.ok){st.working++;if(statusCell)statusCell.innerHTML='<span class="badge ok" title="'+reason+'">'+t('successful')+'</span>';if(speedCell){if(typeof item.ms==='number'){speedCell.textContent=item.ms;st.sumMs+=item.ms;st.countMs++;}else{speedCell.textContent='—';}}}else{st.dead++;if(speedCell)speedCell.textContent='—';if(statusCell)statusCell.innerHTML='<span class="badge dead" title="'+reason+'">'+pxReasonLabel(reason)+'</span>';}}
-function pxRenderCounters(st,total){const w=document.getElementById('px-working'),d=document.getElementById('px-dead'),tt=document.getElementById('px-total'),sp=document.getElementById('px-speed');if(w)w.textContent=st.working;if(d)d.textContent=st.dead;if(tt)tt.textContent=total;if(sp)sp.textContent=st.countMs?Math.round(st.sumMs/st.countMs):'—';}
-function pxFinishValidation(st,total,autoRemove){pxValidateRunning=false;pxValidateTimer=null;if(!autoRemove)pxRenderCounters(st,total);const elapsed=Math.max(0,Math.round((Date.now()-st.start)/1000));const reasonText=Object.keys(st.reasons).filter(k=>k!=='ok').map(k=>k+': '+st.reasons[k]).join(', ');pxSetProgress(st.applied+' / '+total+' ('+elapsed+'s) — '+t('successful')+' '+st.working+', '+t('failed')+' '+st.dead);if(autoRemove){refreshProxyCounters();if(st.removeKeys.length){fetch('http://localhost:3000/api/proxies/remove-dead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keys:st.removeKeys})}).catch(()=>{});}addLog('success','Removed '+st.removed+' dead proxies in '+elapsed+'s — working kept: '+st.working+(reasonText?' ('+reasonText+')':''));}else{addLog('success',t('validation_complete')+': '+t('successful')+' '+st.working+', '+t('failed')+' '+st.dead+(reasonText?' ('+reasonText+')':''));pxUpdateRotationInfo();}}
-function runPxValidation(autoRemove){if(pxValidateRunning){addLog('warn','Validation already running — wait for it to finish');return;}const tbody=document.getElementById('px-table');const rows=[...tbody.querySelectorAll('tr')].filter(r=>r.dataset&&r.dataset.key);if(!rows.length){addLog('warn',t('no_proxies_validate'));return;}const rowMap=new Map();rows.forEach(r=>rowMap.set(r.dataset.key,r));if(!autoRemove){rows.forEach(row=>{if(row.children[2]&&row.children[3]){row.children[2].textContent='—';row.children[3].innerHTML='<span class="badge">'+t('checking')+'</span>';}});}const st={working:0,dead:0,sumMs:0,countMs:0,reasons:{},applied:0,removed:0,removeKeys:[],start:Date.now()};pxValidateRunning=true;try{localStorage.setItem('proxyTestUrl',((document.getElementById('px-test-url')||{}).value||'').trim());}catch(e){}pxSetProgress('0 / '+rows.length);fetch('http://localhost:3000/api/proxies/validate/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({targetUrl:((document.getElementById('px-test-url')||{}).value||'').trim(),mode:((document.getElementById('px-real-browser')||{}).checked?'browser':'reachability')})}).then(r=>r.json()).then(data=>{if(!(data&&data.success&&data.jobId))throw new Error(t('proxy_validation_failed'));const jobId=data.jobId;let from=0;const poll=()=>{fetch('http://localhost:3000/api/proxies/validate/progress?job='+encodeURIComponent(jobId)+'&from='+from).then(r=>r.json()).then(p=>{if(!p||!p.success)throw new Error('validation job lost');if(Array.isArray(p.results)&&p.results.length){p.results.forEach(item=>{const row=rowMap.get(item.key);if(!row)return;st.applied++;pxApplyResult(row,item,st);if(autoRemove&&!item.ok){row.remove();st.removed++;st.removeKeys.push(item.key);}});from+=p.results.length;if(autoRemove){refreshProxyCounters();}else{pxRenderCounters(st,rows.length);}const elapsed=Math.max(0,Math.round((Date.now()-st.start)/1000));pxSetProgress(st.applied+' / '+rows.length+' ('+elapsed+'s)'+(autoRemove?' — removed '+st.removed:''));}if(p.done){pxFinishValidation(st,rows.length,autoRemove);}else{pxValidateTimer=setTimeout(poll,400);}}).catch(err=>{pxValidateRunning=false;pxValidateTimer=null;addLog('error',t('proxy_validation_api_failed')+': '+err.message);});};poll();}).catch(err=>{pxValidateRunning=false;addLog('error',t('proxy_validation_api_failed')+': '+err.message);});}
-function validateAllPx(){addLog('info',t('validating_all_proxies'));runPxValidation(false);}
-function refreshProxyCounters(){const tbody=document.getElementById('px-table');if(!tbody)return;const rows=[...tbody.querySelectorAll('tr')].filter(r=>r.dataset&&r.dataset.key);let working=0,dead=0;rows.forEach(r=>{const b=r.children[3]?r.children[3].querySelector('.badge'):null;if(b&&b.classList.contains('dead'))dead++;else working++;});const w=document.getElementById('px-working'),d=document.getElementById('px-dead'),tt=document.getElementById('px-total');if(w)w.textContent=working;if(d)d.textContent=dead;if(tt)tt.textContent=rows.length;}
-function removeProxyRowEl(row){if(!row)return;const key=row.dataset.key||'';row.remove();refreshProxyCounters();if(key){fetch('http://localhost:3000/api/proxies/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key})}).catch(()=>{});addLog('info','Proxy removed: '+key);}}
-function removeProxyRow(btn){removeProxyRowEl(btn&&btn.closest?btn.closest('tr'):null);}
-let pxMenuRow=null;
-function pxShowMenu(x,y,row){const m=document.getElementById('px-menu');if(!m)return;pxMenuRow=row;m.style.display='block';const mw=180,mh=44;m.style.left=Math.min(x,window.innerWidth-mw-8)+'px';m.style.top=Math.min(y,window.innerHeight-mh-8)+'px';}
-function pxHideMenu(){const m=document.getElementById('px-menu');if(m)m.style.display='none';pxMenuRow=null;}
-function pxMenuRemove(){const row=pxMenuRow;pxHideMenu();removeProxyRowEl(row);}
-function bindProxyContextMenu(){const tbody=document.getElementById('px-table');if(!tbody||tbody.dataset.ctx==='1')return;tbody.dataset.ctx='1';tbody.addEventListener('contextmenu',ev=>{const row=ev.target&&ev.target.closest?ev.target.closest('tr'):null;if(!row||!row.dataset||!row.dataset.key)return;ev.preventDefault();pxShowMenu(ev.clientX,ev.clientY,row);});document.addEventListener('click',()=>pxHideMenu());document.addEventListener('scroll',()=>pxHideMenu(),true);window.addEventListener('blur',()=>pxHideMenu());}
-function removeDeadProxies(){const tbody=document.getElementById('px-table');if(!tbody)return;const deadRows=[...tbody.querySelectorAll('tr')].filter(r=>r.dataset&&r.dataset.key&&r.children[3]&&r.children[3].querySelector('.badge.dead'));if(deadRows.length){const keys=deadRows.map(r=>r.dataset.key);deadRows.forEach(r=>r.remove());refreshProxyCounters();fetch('http://localhost:3000/api/proxies/remove-dead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keys})}).then(r=>r.json()).then(d=>{if(d&&d.success)addLog('success','Removed '+d.removed+' dead proxies ('+d.count+' left)');}).catch(()=>{});return;}addLog('info','No dead proxies marked yet — validating and removing failures automatically...');runPxValidation(true);}
-function clearProxies(){document.getElementById('px-input').value='';document.getElementById('px-table').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:24px">'+t('no_proxies')+'</td></tr>';document.getElementById('px-working').textContent='0';document.getElementById('px-dead').textContent='0';document.getElementById('px-total').textContent='0';document.getElementById('px-speed').textContent='—';fetch('http://localhost:3000/api/proxies/clear',{method:'POST',headers:{'Content-Type':'application/json'}}).catch(()=>{});addLog('info',t('proxies_cleared'));}
+  let pxValidateRunning=false,pxValidateTimer=null,pxValidateEpoch=0,pxValidateJobId=null;
+  function pxSetProgress(txt){const el=document.getElementById('px-progress');if(el)el.textContent=txt||'';}
+  function pxReasonLabel(reason){if(reason==='auth')return 'Auth Failed (407)';if(reason==='payment')return 'Payment Required';if(reason==='timeout')return 'Timeout';if(reason==='refused')return 'Refused';if(reason==='connect_failed')return 'No Connection';if(reason==='site_blocked')return 'Site Blocked';if(reason==='proxy_detected')return 'Site Detected Proxy';if(reason==='cert_error')return 'Cert Error (MITM)';if(reason==='proxy_conn_failed')return 'Proxy Conn Failed';if(reason==='tunnel_failed')return 'Tunnel Failed';if(reason==='ip_leak')return 'IP Leak (not proxying)';if(reason==='dns_failed')return 'DNS Failed';if(reason==='connection_reset')return 'Conn Reset';if(reason==='browser_failed')return 'Browser Failed';if(reason==='browser_error')return 'Browser Error';if(reason==='browser_closed')return 'Browser Closed';if(reason==='no_response')return 'No Response';if(reason==='http_error')return 'HTTP Error';if(reason==='aborted')return 'Aborted';if(reason==='invalid_target')return 'Invalid URL';if(reason==='invalid')return 'Invalid Proxy';if(reason && reason.indexOf('proxy_')===0)return 'Proxy Error '+reason.slice(6);return t('failed');}
+  function pxCancelValidation(){
+    pxValidateEpoch++;
+    pxValidateRunning=false;
+    if(pxValidateTimer){clearTimeout(pxValidateTimer);pxValidateTimer=null;}
+    const job=pxValidateJobId;pxValidateJobId=null;
+    if(job){try{fetch('http://localhost:3000/api/proxies/validate/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job})}).catch(()=>{});}catch(e){}}
+    pxSetProgress('');
+  }
+  function pxApplyResult(row,item,st){const reason=item.reason||(item.ok?'ok':'failed');st.reasons[reason]=(st.reasons[reason]||0)+1;const speedCell=row.children[2],statusCell=row.children[3];if(item.ok){st.working++;if(statusCell)statusCell.innerHTML='<span class="badge ok" title="'+pxEsc(reason)+'">'+pxEsc(pxStatusLabel('px_verified','Verified'))+'</span>';if(speedCell){if(typeof item.ms==='number'&&item.ms>0){speedCell.textContent=item.ms;st.sumMs+=item.ms;st.countMs++;}else{speedCell.textContent='—';}}}else{st.dead++;if(speedCell)speedCell.textContent='—';if(statusCell)statusCell.innerHTML='<span class="badge dead" title="'+pxEsc(reason)+'">'+pxEsc(pxReasonLabel(reason))+'</span>';}}
+  function pxRenderCounters(st,total){const w=document.getElementById('px-working'),d=document.getElementById('px-dead'),tt=document.getElementById('px-total'),sp=document.getElementById('px-speed');if(w)w.textContent=st.working;if(d)d.textContent=st.dead;if(tt)tt.textContent=total;if(sp)sp.textContent=st.countMs?Math.round(st.sumMs/st.countMs):'—';}
+  async function pxFinishValidation(st,total,autoRemove){
+    pxValidateRunning=false;
+    if(pxValidateTimer){clearTimeout(pxValidateTimer);pxValidateTimer=null;}
+    pxValidateJobId=null;
+    if(!autoRemove)pxRenderCounters(st,total);
+    const elapsed=Math.max(0,Math.round((Date.now()-st.start)/1000));
+    const reasonText=Object.keys(st.reasons).filter(k=>k!=='ok').map(k=>k+': '+st.reasons[k]).join(', ');
+    pxSetProgress(st.applied+' / '+total+' ('+elapsed+'s) — '+t('successful')+' '+st.working+', '+t('failed')+' '+st.dead);
+    if(autoRemove){
+      refreshProxyCounters();
+      if(st.removeKeys.length){try{await pxServerTask(()=>fetch('http://localhost:3000/api/proxies/remove-dead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keys:st.removeKeys})}).then(r=>r.json()));}catch(e){}}
+      addLog('success','Removed '+st.removed+' dead proxies in '+elapsed+'s — working kept: '+st.working+(reasonText?' ('+reasonText+')':''));
+    }else{
+      addLog('success',t('validation_complete')+': '+t('successful')+' '+st.working+', '+t('failed')+' '+st.dead+(reasonText?' ('+reasonText+')':''));
+      if(!st.applied&&total>0)addLog('warn','Validation finished but no per-proxy results were received — reloading the saved statuses from the server.');
+      pxUpdateRotationInfo();
+    }
+    await pxRefreshFromServer();
+  }
+  async function runPxValidation(autoRemove){
+    if(pxValidateRunning){addLog('warn','Validation already running — wait for it to finish');return;}
+    const tbody=document.getElementById('px-table');
+    if(!tbody){addLog('error','Proxy table not found');return;}
+    await pxServerTask(()=>Promise.resolve());
+    const trs=[...tbody.querySelectorAll('tr')].filter(r=>r.dataset&&r.dataset.key);
+    if(!trs.length){addLog('warn',t('no_proxies_validate'));return;}
+    const rowMap=new Map(),payload=[],seen=new Set();
+    trs.forEach(row=>{const p=pxRowToProxy(row);if(!p)return;const key=pxKeyOf(p);row.dataset.key=key;if(seen.has(key))return;seen.add(key);rowMap.set(key,row);payload.push({type:p.type,host:p.host,port:p.port,username:p.username||null,password:p.password||null,raw:p.raw||(p.host+':'+p.port)});});
+    if(!payload.length){addLog('warn','No valid proxies in the table — use IP:PORT or IP:PORT:USER:PASS formats.');return;}
+    if(!autoRemove){trs.forEach(row=>{if(row.children[2]&&row.children[3]){row.children[2].textContent='—';row.children[3].innerHTML='<span class="badge" title="'+pxEsc('Checking')+'">'+pxEsc(pxStatusLabel('px_status_checking','Checking…'))+'</span>';}});}
+    const st={working:0,dead:0,sumMs:0,countMs:0,reasons:{},applied:0,removed:0,removeKeys:[],start:Date.now(),lastResultAt:Date.now()};
+    const epoch=++pxValidateEpoch;
+    pxValidateRunning=true;
+    try{localStorage.setItem('proxyTestUrl',((document.getElementById('px-test-url')||{}).value||'').trim());}catch(e){}
+    pxSetProgress('0 / '+payload.length);
+    const mode=((document.getElementById('px-real-browser')||{}).checked?'browser':'reachability');
+    try{
+      const data=await pxFetchJson('http://localhost:3000/api/proxies/validate/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({targetUrl:((document.getElementById('px-test-url')||{}).value||'').trim(),mode,proxies:payload,concurrency:mode==='browser'?6:12,timeoutMs:mode==='browser'?15000:5000})},20000);
+      if(!data||!data.success||!data.jobId)throw new Error((data&&data.error)||t('proxy_validation_failed'));
+      if(epoch!==pxValidateEpoch)return;
+      pxValidateJobId=data.jobId;
+      await pxPollValidation(data.jobId,epoch,st,payload.length,autoRemove,rowMap);
+    }catch(err){
+      if(epoch===pxValidateEpoch){pxValidateRunning=false;if(pxValidateTimer){clearTimeout(pxValidateTimer);pxValidateTimer=null;}pxSetProgress('');addLog('error',t('proxy_validation_api_failed')+': '+(err&&err.message?err.message:'unknown error'));}
+    }
+  }
+  async function pxPollValidation(jobId,epoch,st,total,autoRemove,rowMap){
+    let from=0;
+    const started=Date.now();
+    try{
+      while(true){
+        if(epoch!==pxValidateEpoch)return;
+        const p=await pxFetchJson('http://localhost:3000/api/proxies/validate/progress?job='+encodeURIComponent(jobId)+'&from='+from,{},15000);
+        if(!p||!p.success)throw new Error('validation job lost — is the backend still running?');
+        if(p.error)throw new Error(p.error);
+        if(Array.isArray(p.results)&&p.results.length){
+          p.results.forEach(item=>{const row=rowMap.get(item.key);if(!row)return;st.applied++;st.lastResultAt=Date.now();pxApplyResult(row,item,st);if(autoRemove&&!item.ok){row.remove();st.removed++;st.removeKeys.push(item.key);}});
+          from+=p.results.length;
+          if(autoRemove)refreshProxyCounters();else pxRenderCounters(st,total);
+          const elapsed=Math.max(0,Math.round((Date.now()-st.start)/1000));
+          pxSetProgress(st.applied+' / '+total+' ('+elapsed+'s)'+(autoRemove?' — removed '+st.removed:''));
+        }
+        if(p.done){await pxFinishValidation(st,total,autoRemove);return;}
+        if(Date.now()-st.lastResultAt>120000)throw new Error('validation stalled — no result for 2 minutes');
+        if(Date.now()-started>30*60*1000)throw new Error('validation timed out after 30 minutes');
+        await new Promise(r=>{pxValidateTimer=setTimeout(r,400);});
+      }
+    }catch(err){
+      if(epoch===pxValidateEpoch){pxValidateRunning=false;if(pxValidateTimer){clearTimeout(pxValidateTimer);pxValidateTimer=null;}pxValidateJobId=null;pxSetProgress('');addLog('error',t('proxy_validation_api_failed')+': '+(err&&err.message?err.message:'unknown error'));}
+    }
+  }
+  function validateAllPx(){addLog('info',t('validating_all_proxies'));runPxValidation(false);}
+  function refreshProxyCounters(){const tbody=document.getElementById('px-table');if(!tbody)return;const rows=[...tbody.querySelectorAll('tr')].filter(r=>r.dataset&&r.dataset.key);let working=0,dead=0;rows.forEach(r=>{const b=r.children[3]?r.children[3].querySelector('.badge'):null;if(!b)return;if(b.classList.contains('ok'))working++;else if(b.classList.contains('dead'))dead++;});const w=document.getElementById('px-working'),d=document.getElementById('px-dead'),tt=document.getElementById('px-total');if(w)w.textContent=working;if(d)d.textContent=dead;if(tt)tt.textContent=rows.length;}
+  function removeProxyRowEl(row){if(!row)return;const key=row.dataset.key||'';row.remove();refreshProxyCounters();if(key){pxServerTask(()=>fetch('http://localhost:3000/api/proxies/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key})})).catch(()=>{});addLog('info','Proxy removed: '+key);}pxUpdateRotationInfo();}
+  function removeProxyRow(btn){removeProxyRowEl(btn&&btn.closest?btn.closest('tr'):null);}
+  let pxMenuRow=null;
+  function pxShowMenu(x,y,row){const m=document.getElementById('px-menu');if(!m)return;pxMenuRow=row;m.style.display='block';const mw=180,mh=44;m.style.left=Math.min(x,window.innerWidth-mw-8)+'px';m.style.top=Math.min(y,window.innerHeight-mh-8)+'px';}
+  function pxHideMenu(){const m=document.getElementById('px-menu');if(m)m.style.display='none';pxMenuRow=null;}
+  function pxMenuRemove(){const row=pxMenuRow;pxHideMenu();removeProxyRowEl(row);}
+  function bindProxyContextMenu(){const tbody=document.getElementById('px-table');if(!tbody||tbody.dataset.ctx==='1')return;tbody.dataset.ctx='1';tbody.addEventListener('contextmenu',ev=>{const row=ev.target&&ev.target.closest?ev.target.closest('tr'):null;if(!row||!row.dataset||!row.dataset.key)return;ev.preventDefault();pxShowMenu(ev.clientX,ev.clientY,row);});document.addEventListener('click',()=>pxHideMenu());document.addEventListener('scroll',()=>pxHideMenu(),true);window.addEventListener('blur',()=>pxHideMenu());}
+  async function removeDeadProxies(){const tbody=document.getElementById('px-table');if(!tbody)return;const deadRows=[...tbody.querySelectorAll('tr')].filter(r=>r.dataset&&r.dataset.key&&r.children[3]&&r.children[3].querySelector('.badge.dead'));if(deadRows.length){const keys=deadRows.map(r=>r.dataset.key);deadRows.forEach(r=>r.remove());refreshProxyCounters();try{const d=await pxServerTask(()=>fetch('http://localhost:3000/api/proxies/remove-dead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keys})}).then(r=>r.json()));if(d&&d.success)addLog('success','Removed '+d.removed+' dead proxies ('+d.count+' left)');}catch(e){addLog('warn','Removed from the table, but the backend could not be updated.');}pxUpdateRotationInfo();return;}addLog('info','No dead proxies marked yet — validating and removing failures automatically...');runPxValidation(true);}
+  async function removeProxiesByStatus(status){
+    if(pxValidateRunning){addLog('warn','Validation is running — wait for it to finish before removing proxies.');return;}
+    const tbody=document.getElementById('px-table');if(!tbody)return;
+    const cls=status==='ok'?'ok':(status==='dead'?'dead':'check');
+    const label=status==='ok'?'verified':(status==='dead'?'dead':'loaded (not validated)');
+    const rows=[...tbody.querySelectorAll('tr')].filter(r=>r.dataset&&r.dataset.key&&r.children[3]&&r.children[3].querySelector('.badge.'+cls));
+    if(!rows.length){addLog('warn','No '+label+' proxies to remove.');return;}
+    if(!confirm('Remove all '+rows.length+' '+label+' proxies from the saved list?'))return;
+    rows.forEach(r=>r.remove());
+    refreshProxyCounters();
+    try{
+      const d=await pxServerTask(()=>fetch('http://localhost:3000/api/proxies/remove-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})}).then(r=>r.json()));
+      if(d&&d.success){addLog('success','Removed '+d.removed+' '+label+' proxies ('+d.count+' left)');await pxRefreshFromServer();}
+      else addLog('warn','Could not remove '+label+' proxies from the backend.');
+    }catch(e){addLog('error','Removed from the table, but the backend could not be updated: '+(e&&e.message?e.message:'network error'));}
+    pxUpdateRotationInfo();
+  }
+  async function clearProxies(){
+    pxCancelValidation();
+    const input=document.getElementById('px-input');if(input)input.value='';
+    const tbody=document.getElementById('px-table');
+    if(tbody)tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:24px">'+pxEsc(t('no_proxies'))+'</td></tr>';
+    const w=document.getElementById('px-working'),d=document.getElementById('px-dead'),tt=document.getElementById('px-total'),sp=document.getElementById('px-speed');
+    if(w)w.textContent='0';if(d)d.textContent='0';if(tt)tt.textContent='0';if(sp)sp.textContent='—';
+    try{await pxServerTask(()=>fetch('http://localhost:3000/api/proxies/clear',{method:'POST',headers:{'Content-Type':'application/json'}}).then(r=>r.json()));addLog('info',t('proxies_cleared'));}catch(e){addLog('warn','Proxy list cleared in the UI, but the backend could not be reached.');}
+    pxUpdateRotationInfo();
+  }
 
 // Scrape free proxies from public sources (HTTP, HTTPS, SOCKS4, SOCKS5)
 // and append them to the proxy table + server-side store.

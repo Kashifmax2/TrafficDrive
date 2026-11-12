@@ -95,7 +95,17 @@ function loadProxiesFromDisk() {
     if (!fs.existsSync(PROXY_STORE_FILE)) return;
     const data = JSON.parse(fs.readFileSync(PROXY_STORE_FILE, 'utf8'));
     const list = Array.isArray(data) ? data : data.proxies;
-    if (Array.isArray(list)) loadedProxies = list;
+    if (Array.isArray(list)) {
+      // Drop junk that older versions may have stored (headers like
+      // "Free proxies from ..." or "Updated at ..." parsed as host names).
+      loadedProxies = list
+        .filter((p) => p && p.host && p.port && !/\s/.test(String(p.host)))
+        .map((p) => ({
+          ...p,
+          type: String(p.type || 'http').toLowerCase(),
+          port: parseInt(p.port, 10) || p.port,
+        }));
+    }
   } catch (e) {
     console.error('[KG TRF Tool] Could not load saved proxies:', e.message);
   }
@@ -1498,6 +1508,7 @@ async function runBrowserValidation(list, targetUrl, onResult, opts = {}) {
   let next = 0;
   async function worker() {
     while (true) {
+      if (typeof opts.shouldStop === 'function' && opts.shouldStop()) return;
       const i = next++;
       if (i >= list.length) return;
       const p = list[i];
@@ -2502,13 +2513,17 @@ async function handleRequest(req, res) {
     // De-duplicate by host:port:type to avoid loading the same proxy twice
     const seen = new Set(loadedProxies.map(p => proxyStoreKey(p)));
     let added = 0;
+    let skipped = 0;
     for (const p of incoming) {
+      if (!p || !p.host || !p.port || /\s/.test(String(p.host))) { skipped++; continue; }
+      const port = parseInt(p.port, 10);
+      if (!port || port < 1 || port > 65535) { skipped++; continue; }
       const key = proxyStoreKey(p);
       if (!seen.has(key)) {
         loadedProxies.push({
-          type: p.type || 'http',
-          host: p.host,
-          port: p.port,
+          type: String(p.type || 'http').toLowerCase(),
+          host: String(p.host),
+          port,
           username: p.username || null,
           password: p.password || null,
           raw: p.raw || (p.host + ':' + p.port),
@@ -2519,7 +2534,7 @@ async function handleRequest(req, res) {
       }
     }
     saveProxiesToDisk();
-    sendJSON(res, 200, { success: true, count: loadedProxies.length, added });
+    sendJSON(res, 200, { success: true, count: loadedProxies.length, added, skipped });
     return;
   }
 
@@ -2549,17 +2564,52 @@ async function handleRequest(req, res) {
   // --- Proxies: validate (background job, results streamed) ---
   if (pathname === '/api/proxies/validate/start' && method === 'POST') {
     const body = await readBody(req).catch(() => ({}));
-    const list = Array.isArray(body.proxies) && body.proxies.length > 0 ? body.proxies : loadedProxies;
+    const supplied = Array.isArray(body.proxies) && body.proxies.length > 0 ? body.proxies : null;
+    const keyOf = (p) => (String(p.type || 'http').toLowerCase()) + ':' + p.host + ':' + p.port;
+    const normalize = (p) => ({
+      type: String(p.type || 'http').toLowerCase(),
+      host: String(p.host),
+      port: parseInt(p.port, 10),
+      username: p.username || null,
+      password: p.password || null,
+      raw: p.raw || (p.host + ':' + p.port),
+    });
+    const valid = (p) => { const port = p && parseInt(p.port, 10); return !!(p && p.host && port && port > 0 && port < 65536 && !/\s/.test(String(p.host))); };
+
+    // The UI sends the list it is showing. Sync any missing entries into the
+    // persistent store so validation results (and bulk removal) apply to
+    // exactly the proxies the user sees, not a stale disk snapshot.
+    if (supplied) {
+      const seen = new Set(loadedProxies.map(proxyStoreKey));
+      let added = 0;
+      for (const raw of supplied) {
+        if (!valid(raw)) continue;
+        const p = normalize(raw);
+        const key = keyOf(p);
+        if (seen.has(key)) continue;
+        loadedProxies.push({ ...p, status: 'unknown' });
+        seen.add(key);
+        added++;
+      }
+      if (added) { try { saveProxiesToDisk(); } catch (_) {} }
+    }
+
+    const list = (supplied || loadedProxies).filter(valid).map(normalize);
+    if (!list.length) {
+      sendJSON(res, 400, { success: false, error: 'No valid proxies to validate' });
+      return;
+    }
+
     const targetUrl = typeof body.targetUrl === 'string' && /^https?:\/\//i.test(body.targetUrl.trim()) ? body.targetUrl.trim() : null;
     const mode = body.mode === 'browser' ? 'browser' : 'reachability';
     const jobId = 'vj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-    const job = { total: list.length, queue: [], done: false, createdAt: Date.now(), mode };
+    const job = { total: list.length, queue: [], done: false, cancelled: false, createdAt: Date.now(), mode };
     validationJobs.set(jobId, job);
     (async () => {
-      const keyOf = (p) => (String(p.type || 'http').toLowerCase()) + ':' + p.host + ':' + p.port;
       try {
         if (mode === 'browser') {
           await runBrowserValidation(list, targetUrl, (i, p, r) => {
+            if (job.cancelled) return;
             const key = keyOf(p);
             recordProxyResult(key, r, targetUrl);
             job.queue.push({
@@ -2577,23 +2627,29 @@ async function handleRequest(req, res) {
             timeoutMs: body.timeoutMs,
             concurrency: body.concurrency,
             checkEgress: body.checkEgress,
+            shouldStop: () => job.cancelled,
           });
         } else {
-          const concurrency = Math.min(250, Math.max(1, list.length));
+          // Bounded worker pool. A huge burst (hundreds of sockets) could
+          // stall the HTTP server, which made the UI look "stuck" until the
+          // app was restarted.
+          const concurrency = Math.max(1, Math.min(20, parseInt(body.concurrency, 10) || 12));
           let next = 0;
           async function worker() {
             while (true) {
+              if (job.cancelled) return;
               const i = next++;
               if (i >= list.length) return;
               const p = list[i];
               let r;
               try { r = await validateProxy(p, 4000, targetUrl); } catch (e) { r = { ok: false, ms: 0, reason: 'failed' }; }
+              if (job.cancelled) return;
               const key = keyOf(p);
               recordProxyResult(key, r);
               job.queue.push({ key, ok: !!r.ok, ms: r.ms, reason: r.reason || (r.ok ? 'ok' : 'failed') });
             }
           }
-          await Promise.all(Array.from({ length: concurrency }, worker));
+          await Promise.all(Array.from({ length: Math.min(concurrency, list.length) }, worker));
         }
       } catch (e) {
         job.error = e.message;
@@ -2604,6 +2660,15 @@ async function handleRequest(req, res) {
       }
     })();
     sendJSON(res, 200, { success: true, jobId, total: list.length, mode });
+    return;
+  }
+
+  // --- Proxies: cancel a running validation job ---
+  if (pathname === '/api/proxies/validate/cancel' && method === 'POST') {
+    const body = await readBody(req).catch(() => ({}));
+    const job = validationJobs.get(body.job || '');
+    if (job) { job.cancelled = true; job.done = true; }
+    sendJSON(res, 200, { success: true, cancelled: !!job });
     return;
   }
 
@@ -2654,7 +2719,7 @@ async function handleRequest(req, res) {
     // This keeps total time low even for large lists while still limiting
     // simultaneous connections.
     const results = new Array(toValidate.length);
-    const concurrency = Math.min(50, Math.max(1, toValidate.length));
+    const concurrency = Math.max(1, Math.min(20, parseInt(body.concurrency, 10) || 12));
     let nextIndex = 0;
     async function worker() {
       while (true) {
@@ -2704,6 +2769,32 @@ async function handleRequest(req, res) {
     loadedProxies = remaining;
     saveProxiesToDisk();
     sendJSON(res, 200, { success: true, removed: before - loadedProxies.length, count: loadedProxies.length });
+    return;
+  }
+
+  // --- Proxies: bulk remove by validation status ---
+  // `ok` = verified/working, `unknown` = loaded but never validated.
+  if (pathname === '/api/proxies/remove-status' && method === 'POST') {
+    const body = await readBody(req).catch(() => ({}));
+    const raw = String(body.status || '').toLowerCase();
+    const status = raw === 'loaded' ? 'unknown' : raw;
+    if (!['ok', 'dead', 'unknown'].includes(status)) {
+      sendJSON(res, 400, { success: false, error: 'status must be ok, dead or unknown' });
+      return;
+    }
+    backupProxiesToDisk();
+    const before = loadedProxies.length;
+    loadedProxies = loadedProxies.filter((p) => {
+      const s = p && (p.status === 'ok' || p.status === 'dead') ? p.status : 'unknown';
+      return s !== status;
+    });
+    saveProxiesToDisk();
+    sendJSON(res, 200, {
+      success: true,
+      status,
+      removed: before - loadedProxies.length,
+      count: loadedProxies.length,
+    });
     return;
   }
 

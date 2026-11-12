@@ -1,6 +1,6 @@
 {
   "name": "kg-trf-tool",
-  "version": "5.9.9",
+  "version": "5.9.10",
   "productName": "KG TRF Tool",
   "description": "KG TRF Tool - Desktop Traffic Automation Application",
   "main": "main.js",

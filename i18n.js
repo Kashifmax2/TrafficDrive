@@ -32,6 +32,9 @@
       off_status: 'OFF',
       system_on: 'System is ON',
       system_off: 'System is OFF',
+      px_verified: 'Verified',
+      px_status_loaded: 'Loaded',
+      px_status_checking: 'Checking…',
     },
     ur: {
       nav_dashboard: 'ڈیش بورڈ',
@@ -414,6 +417,9 @@
       return lang[key];
     }
     if (EN[key]) return EN[key];
+    // Final fallback: English dictionary, so keys added only to `en` still
+    // resolve when another language has no translation for them.
+    if (LANGS.en && Object.prototype.hasOwnProperty.call(LANGS.en, key)) return LANGS.en[key];
     return key;
   }
 
